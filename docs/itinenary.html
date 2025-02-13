@@ -15,6 +15,7 @@
     let totalDays = 1; // 초기 4일 버튼이 있다고 가정
     let currentEventEditing = null;
 
+
     // "HH:MM" 형식을 분 단위로 변환하는 유틸리티 함수
     function getTimeInMinutes(timeStr) {
       const parts = timeStr.split(':');
@@ -520,7 +521,8 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">시간</label>
             <label for="event-time" class="relative block cursor-pointer" onclick="document.getElementById('event-time').removeAttribute('readonly'); document.getElementById('event-time').showPicker();">
-            <input type="time" id="event-time" readonly class="w-full border-gray-300 rounded-md !rounded-button pl-12 pr-4 py-3" required step="60" lang="ko">
+                <input type="time" id="event-time" class="w-full border-gray-300 rounded-md pl-12 pr-4 py-3" required step="60" lang="ko">
+
             <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
                 <i class="fas fa-clock"></i>
             </span>
@@ -578,7 +580,128 @@
         </div>
       </div>
     </div>
+<input type="time" id="event-time" class="w-full border-gray-300 rounded-md !rounded-button pl-12 pr-4 py-3" required step="60" lang="ko">
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    let timeInput = document.getElementById("event-time");
 
+    // 브라우저에서 24시간제 강제 적용 (Safari 대응)
+    timeInput.addEventListener("focus", function () {
+      timeInput.showPicker();
+    });
+
+    timeInput.addEventListener("input", function () {
+      let [hours, minutes] = timeInput.value.split(":");
+      hours = parseInt(hours, 10);
+
+      // AM/PM 형식 감지 시 24시간제로 변환
+      if (isNaN(hours) || hours < 0 || hours > 23) {
+        timeInput.value = "00:00";
+      }
+    });
+  });
+</script>
+<!-- 기존 스크립트 태그 아래에 추가 -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // test_data.json 파일을 불러와 초기 일정 데이터를 구성합니다.
+      fetch('test_data.json')
+        .then(response => response.json())
+        .then(data => {
+          // 헤더 타이틀을 JSON의 title로 업데이트 (예: "Tokyo Getaway")
+          const headerTitle = document.querySelector('header h1');
+          if (headerTitle && data.title) {
+            headerTitle.innerText = data.title;
+          }
+    
+          // 좌측 개요(Trip Overview) 업데이트
+          const overviewElems = document.querySelectorAll('.fa-map-marker-alt');
+          overviewElems.forEach(el => {
+            const parent = el.parentNode;
+            if (parent) {
+              parent.querySelector('p.font-medium').innerText = data.location.address;
+            }
+          });
+    
+          // Day 버튼 및 콘텐츠 영역 초기화
+          const dayButtonsContainer = document.getElementById('day-buttons-container');
+          const dayContentsContainer = document.getElementById('day-contents-container');
+          dayButtonsContainer.innerHTML = ""; // 기존 버튼 제거
+          dayContentsContainer.innerHTML = ""; // 기존 콘텐츠 제거
+    
+          // JSON의 itinerary 배열을 순회하며 Day별 버튼과 콘텐츠 생성
+          data.itinerary.forEach((dayData, index) => {
+            const dayNumber = index + 1;
+    
+            // Day 버튼 생성
+            const dayButton = document.createElement('button');
+            dayButton.className =
+              'day-button px-4 py-2 ' +
+              (dayNumber === 1 ? 'bg-custom text-white' : 'text-gray-600 hover:bg-gray-100 !rounded-button');
+            dayButton.id = 'day-btn-' + dayNumber;
+            dayButton.innerText = 'Day ' + dayNumber;
+            dayButton.onclick = function () {
+              showDayContent(dayNumber);
+            };
+            dayButtonsContainer.appendChild(dayButton);
+    
+            // Day 콘텐츠 생성
+            const dayContent = document.createElement('div');
+            dayContent.id = 'day' + dayNumber + '-content';
+            dayContent.className =
+              'day-content ' +
+              (dayNumber === 1 ? '' : 'hidden') +
+              ' space-y-8 transition-all duration-300 ease-in-out';
+    
+            // 이벤트 컨테이너 생성
+            const eventsContainer = document.createElement('div');
+            eventsContainer.className = 'events-container border-l-2 border-custom';
+            eventsContainer.id = 'day' + dayNumber + '-events-container';
+    
+            // 해당 Day의 이벤트가 있을 경우 이벤트 카드 생성, 없으면 빈 메시지 추가
+            if (dayData.events && dayData.events.length > 0) {
+              dayData.events.forEach(eventData => {
+                let description = "";
+                if (eventData.details) {
+                  description = "Open: " + eventData.details.open_time;
+                  if (eventData.details.cost !== null) {
+                    description += ", Cost: " + eventData.details.cost;
+                  }
+                  description += ". More info: " + eventData.details.link;
+                }
+                const eventObj = {
+                  id: eventData.id || ("event-" + Date.now() + Math.floor(Math.random() * 1000)),
+                  time: eventData.time,
+                  title: eventData.title,
+                  location: eventData.location,
+                  description: description
+                };
+                const eventElem = createEventElement(dayNumber, eventObj);
+                eventsContainer.appendChild(eventElem);
+              });
+            } else {
+              eventsContainer.appendChild(createEmptyMessage(dayNumber));
+            }
+            dayContent.appendChild(eventsContainer);
+            dayContentsContainer.appendChild(dayContent);
+          });
+    
+          // "More" 버튼 재추가
+          const moreButton = document.createElement('button');
+          moreButton.className = 'px-4 py-2 text-gray-600 hover:bg-gray-100 !rounded-button';
+          moreButton.innerText = 'More';
+          moreButton.onclick = addDay;
+          dayButtonsContainer.appendChild(moreButton);
+    
+          updateDayNumbers();
+          showDayContent(1);
+        })
+        .catch(error => console.error("Error loading itinerary:", error));
+    });
+    </script>
+    
+
+    
   </body>
  
   
