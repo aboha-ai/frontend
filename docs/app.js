@@ -3,7 +3,8 @@
 let currentDay = 1;
 let totalDays = 1; // 초기 Day 수
 let currentEventEditing = null;
-
+// temp api key
+const GOOGLE_MAP_API = "your_key";
 // "HH:MM" 형식을 분 단위로 변환하는 유틸리티 함수
 function getTimeInMinutes(timeStr) {
   const parts = timeStr.split(":");
@@ -143,39 +144,83 @@ function createEventElement(dayNumber, eventData) {
   container.className = "relative pl-8 border-l-2 border-custom event-item";
   container.setAttribute("data-time", eventData.time);
   container.id = eventId;
+
+  let detailsHtml = "";
+  if (eventData.details) {
+    detailsHtml = `<ul class="text-gray-600 list-disc pl-5">
+          ${
+            eventData.details.open_time
+              ? `<li>운영시간: ${eventData.details.open_time}</li>`
+              : ""
+          }
+          ${
+            eventData.details.cost !== undefined &&
+            eventData.details.cost !== null
+              ? `<li>예상비용: ${eventData.details.cost}</li>`
+              : ""
+          }
+          ${
+            eventData.details.link
+              ? `<li>홈페이지: <a href="${eventData.details.link}" target="_blank" class="text-blue-500">${eventData.details.link}</a></li>`
+              : ""
+          }
+        </ul>`;
+  } else {
+    detailsHtml = `<p class="text-gray-600">${eventData.description || ""}</p>`;
+  }
+
   container.innerHTML = `
-    <div class="absolute -left-2 top-0 w-4 h-4 rounded-full bg-custom"></div>
-    <div class="bg-gray-50 rounded-lg p-4">
-      <div class="flex items-center gap-3 mb-2">
-        <i class="fas fa-clock text-custom"></i>
-        <p class="text-sm text-gray-600">${eventData.time}</p>
-        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Confirmed</span>
-      </div>
-      <h3 class="text-lg font-medium mb-2">${eventData.title}</h3>
-      <p class="text-gray-600 mb-4">${eventData.location}</p>
-      <div class="flex justify-between items-start">
-        <div class="flex gap-2">
-          <button class="detail-btn text-custom hover:bg-custom/10 px-3 py-1.5 !rounded-button" onclick="toggleDetails('${eventId}-details')">
-            <i class="far fa-file-alt mr-2"></i>Details
-          </button>
-          <button class="reservation-btn bg-blue-500 text-white hover:bg-blue-600 px-3 py-1.5 !rounded-button">
-            Reservation Assistant
-          </button>
+        <div class="absolute -left-2 top-0 w-4 h-4 rounded-full bg-custom"></div>
+        <div class="bg-gray-50 rounded-lg p-4">
+          <div class="flex items-center gap-3 mb-2">
+            <i class="fas fa-clock text-custom"></i>
+            <p class="text-sm text-gray-600">${eventData.time}</p>
+            <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Confirmed</span>
+          </div>
+          <h3 class="text-lg font-medium mb-2">${eventData.title}</h3>
+          <p class="text-gray-600 mb-4">${eventData.location}</p>
+          <div class="flex justify-between items-start">
+            <div class="flex gap-2">
+              <button class="detail-btn text-custom hover:bg-custom/10 px-3 py-1.5 !rounded-button" onclick="toggleDetails('${eventId}-details')">
+                <i class="far fa-file-alt mr-2"></i>Details
+              </button>
+              <button class="reservation-btn bg-blue-500 text-white hover:bg-blue-600 px-3 py-1.5 !rounded-button">
+                Reservation Assistant
+              </button>
+            </div>
+            <div class="flex gap-2">
+              <button class="edit-event-btn text-gray-600 hover:text-red-500 px-3 py-1.5 !rounded-button" onclick="openEditEventModal('${eventId}')">
+                <i class="fas fa-pencil-alt"></i>
+              </button>
+              <button class="delete-event-btn text-gray-600 hover:text-red-500 px-3 py-1.5 !rounded-button" onclick="openDeleteEventModal('${eventId}', '${
+    eventData.title
+  }')">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+          <!-- 상세 내용 영역: 왼쪽은 details 항목, 오른쪽은 Google Map -->
+          <div id="${eventId}-details" class="hidden transition-all duration-300 mt-4 p-4 bg-white rounded shadow">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                ${detailsHtml}
+              </div>
+              <div>
+                <iframe
+                  src="https://www.google.com/maps/embed/v1/place?key=${GOOGLE_MAP_API}&q=${encodeURIComponent(
+    eventData.location
+  )}"
+                  width="100%"
+                  height="200"
+                  style="border:0;"
+                  allowfullscreen
+                  loading="lazy">
+                </iframe>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="flex gap-2">
-          <button class="edit-event-btn text-gray-600 hover:text-red-500 px-3 py-1.5 !rounded-button" onclick="openEditEventModal('${eventId}')">
-            <i class="fas fa-pencil-alt"></i>
-          </button>
-          <button class="delete-event-btn text-gray-600 hover:text-red-500 px-3 py-1.5 !rounded-button" onclick="openDeleteEventModal('${eventId}', '${eventData.title}')">
-            <i class="fas fa-trash"></i>
-          </button>
-        </div>
-      </div>
-      <div id="${eventId}-details" class="hidden transition-all duration-300 mt-4 p-4 bg-white rounded shadow">
-        <p class="text-gray-600">${eventData.description}</p>
-      </div>
-    </div>
-  `;
+      `;
   return container;
 }
 
@@ -363,6 +408,7 @@ document.addEventListener("DOMContentLoaded", function () {
       );
       dayButtonsContainer.innerHTML = "";
       dayContentsContainer.innerHTML = "";
+
       data.itinerary.forEach((dayData, index) => {
         const dayNumber = index + 1;
         const dayButton = document.createElement("button");
@@ -388,14 +434,6 @@ document.addEventListener("DOMContentLoaded", function () {
         eventsContainer.id = "day" + dayNumber + "-events-container";
         if (dayData.events && dayData.events.length > 0) {
           dayData.events.forEach((eventData) => {
-            let description = "";
-            if (eventData.details) {
-              description = "Open: " + eventData.details.open_time;
-              if (eventData.details.cost !== null) {
-                description += ", Cost: " + eventData.details.cost;
-              }
-              description += ". More info: " + eventData.details.link;
-            }
             const eventObj = {
               id:
                 eventData.id ||
@@ -403,7 +441,7 @@ document.addEventListener("DOMContentLoaded", function () {
               time: eventData.time,
               title: eventData.title,
               location: eventData.location,
-              description: description,
+              details: eventData.details, // details 그대로 전달
             };
             const eventElem = createEventElement(dayNumber, eventObj);
             eventsContainer.appendChild(eventElem);
@@ -414,6 +452,7 @@ document.addEventListener("DOMContentLoaded", function () {
         dayContent.appendChild(eventsContainer);
         dayContentsContainer.appendChild(dayContent);
       });
+
       const moreButton = document.createElement("button");
       moreButton.className =
         "px-4 py-2 text-gray-600 hover:bg-gray-100 !rounded-button";
