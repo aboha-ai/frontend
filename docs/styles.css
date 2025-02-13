@@ -1,0 +1,6 @@
+/* styles.css - 커스텀 CSS */
+
+/* Day 버튼의 ::after underline 제거 */
+.day-button::after {
+  display: none;
+}
