@@ -5,6 +5,8 @@ let totalDays = 1; // 초기 Day 수
 let currentEventEditing = null;
 // temp api key
 const GOOGLE_MAP_API = "your_key";
+const WEATHER_API_KEY = "6JMUS56QRRG2LJMKYWKXTPH7Y";
+
 // "HH:MM" 형식을 분 단위로 변환하는 유틸리티 함수
 function getTimeInMinutes(timeStr) {
   const parts = timeStr.split(":");
@@ -58,6 +60,9 @@ function updateDayNumbers() {
     }
   });
   totalDays = dayButtons.length;
+  if (window.tripData) {
+    updateTripOverview(window.tripData);
+  }
 }
 
 // 특정 Day 콘텐츠만 표시 및 버튼 활성화 처리
@@ -360,6 +365,91 @@ function confirmDeleteEvent() {
   modal.classList.remove("flex");
 }
 
+function updateTripOverview(data) {
+  // 시작일은 data.location.arrival_time를 사용 (또는 data.itinerary[0].date)
+  let startDate = new Date(data.location.arrival_time);
+  let duration = totalDays; // day 버튼 개수
+  let endDate = new Date(startDate);
+  endDate.setDate(endDate.getDate() + duration - 1);
+
+  // 날짜 형식 지정 (예: "Apr 15, 2025")
+  const options = { month: "short", day: "numeric", year: "numeric" };
+  let startStr = startDate.toLocaleDateString("en-US", options);
+  let endStr = endDate.toLocaleDateString("en-US", options);
+
+  // Trip Overview 영역 선택 (Overview 컨테이너의 고유 클래스로 선택)
+  const overviewContainer = document.querySelector(
+    ".bg-white.rounded-lg.shadow-sm.p-6.mb-6"
+  );
+  if (overviewContainer) {
+    // Duration: 첫 번째 flex 항목에 해당 (순서가 변경되지 않는 한)
+    const durationBlock = overviewContainer.querySelectorAll(
+      ".flex.items-center.gap-3"
+    )[0];
+    if (durationBlock) {
+      const durationText = durationBlock.querySelector("p.font-medium");
+      if (durationText) {
+        durationText.innerText = `${duration} Days (${startStr} - ${endStr})`;
+      }
+    }
+    // Starting Point: 두 번째 flex 항목
+    const startingBlock = overviewContainer.querySelectorAll(
+      ".flex.items-center.gap-3"
+    )[1];
+    if (startingBlock) {
+      const startingText = startingBlock.querySelector("p.font-medium");
+      if (startingText) {
+        startingText.innerText = data.location.address;
+      }
+    }
+    // Travelers는 그대로 두거나 JSON에 해당 데이터가 있다면 갱신
+  }
+}
+
+// 날씨 정보 받아오기
+function updateWeatherForecast(data) {
+  const tripLocation = data.location.city || data.location.address || "Tokyo";
+  const today = new Date();
+  const startDate = today.toISOString().split("T")[0];
+  const endDate = new Date(today);
+  endDate.setDate(endDate.getDate() + 2);
+  const endDateStr = endDate.toISOString().split("T")[0];
+
+  const weatherApiUrl = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(
+    tripLocation
+  )}/${startDate}/${endDateStr}?unitGroup=metric&lang=ko&key=${WEATHER_API_KEY}&contentType=json`;
+
+  fetch(weatherApiUrl)
+    .then((response) => response.json())
+    .then((weatherData) => {
+      const forecastContainer = document.querySelector(".weather-forecast");
+      if (!forecastContainer) return;
+
+      // 도시 이름을 헤더로 추가 (예: "도쿄 날씨")
+      forecastContainer.innerHTML = `<div class="text-lg font-medium mb-2">${tripLocation} 날씨</div>`;
+
+      weatherData.days.forEach((day) => {
+        const date = new Date(day.datetime);
+        const options = { month: "short", day: "numeric", year: "numeric" };
+        const dateStr = date.toLocaleDateString("ko-KR", options);
+        const weatherHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-sun text-yellow-500 text-2xl"></i>
+              <div>
+                <p class="font-medium">${dateStr}</p>
+                <p class="text-sm text-gray-600">${day.conditions}</p>
+              </div>
+            </div>
+            <p class="text-lg font-medium">${Math.round(day.temp)}°C</p>
+          </div>
+        `;
+        forecastContainer.innerHTML += weatherHTML;
+      });
+    })
+    .catch((error) => console.error("Error fetching weather data:", error));
+}
+
 // 초기화 (DOMContentLoaded)
 document.addEventListener("DOMContentLoaded", function () {
   updateDayNumbers();
@@ -385,82 +475,105 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // test_data.json 파일을 불러와 초기 일정 데이터를 구성
 document.addEventListener("DOMContentLoaded", function () {
+  // 먼저 로컬스토리지에 데이터가 있는지 확인합니다.
+  // data 이름 채크
+  const localData = localStorage.getItem("testData");
+  if (localData) {
+    try {
+      const data = JSON.parse(localData);
+      updateTripUI(data);
+      return;
+    } catch (e) {
+      console.error("Local data 파싱 에러:", e);
+    }
+  }
+  // 로컬스토리지에 데이터가 없거나 파싱 실패 시 test_data.json을 fetch
+  fetchTripData();
+});
+
+function fetchTripData() {
   fetch("test_data.json")
     .then((response) => response.json())
     .then((data) => {
-      const headerTitle = document.querySelector("header h1");
-      if (headerTitle && data.title) {
-        headerTitle.innerText = data.title;
-      }
-      const overviewElems = document.querySelectorAll(".fa-map-marker-alt");
-      overviewElems.forEach((el) => {
-        const parent = el.parentNode;
-        if (parent) {
-          parent.querySelector("p.font-medium").innerText =
-            data.location.address;
-        }
-      });
-      const dayButtonsContainer = document.getElementById(
-        "day-buttons-container"
-      );
-      const dayContentsContainer = document.getElementById(
-        "day-contents-container"
-      );
-      dayButtonsContainer.innerHTML = "";
-      dayContentsContainer.innerHTML = "";
-
-      data.itinerary.forEach((dayData, index) => {
-        const dayNumber = index + 1;
-        const dayButton = document.createElement("button");
-        dayButton.className =
-          "day-button px-4 py-2 " +
-          (dayNumber === 1
-            ? "bg-custom text-white"
-            : "text-gray-600 hover:bg-gray-100 !rounded-button");
-        dayButton.id = "day-btn-" + dayNumber;
-        dayButton.innerText = "Day " + dayNumber;
-        dayButton.onclick = function () {
-          showDayContent(dayNumber);
-        };
-        dayButtonsContainer.appendChild(dayButton);
-        const dayContent = document.createElement("div");
-        dayContent.id = "day" + dayNumber + "-content";
-        dayContent.className =
-          "day-content " +
-          (dayNumber === 1 ? "" : "hidden") +
-          " space-y-8 transition-all duration-300 ease-in-out";
-        const eventsContainer = document.createElement("div");
-        eventsContainer.className = "events-container border-l-2 border-custom";
-        eventsContainer.id = "day" + dayNumber + "-events-container";
-        if (dayData.events && dayData.events.length > 0) {
-          dayData.events.forEach((eventData) => {
-            const eventObj = {
-              id:
-                eventData.id ||
-                "event-" + Date.now() + Math.floor(Math.random() * 1000),
-              time: eventData.time,
-              title: eventData.title,
-              location: eventData.location,
-              details: eventData.details, // details 그대로 전달
-            };
-            const eventElem = createEventElement(dayNumber, eventObj);
-            eventsContainer.appendChild(eventElem);
-          });
-        } else {
-          eventsContainer.appendChild(createEmptyMessage(dayNumber));
-        }
-        dayContent.appendChild(eventsContainer);
-        dayContentsContainer.appendChild(dayContent);
-      });
-
-      const moreButton = document.createElement("button");
-      moreButton.className =
-        "px-4 py-2 text-gray-600 hover:bg-gray-100 !rounded-button";
-      moreButton.innerText = "More";
-      moreButton.onclick = addDay;
-      dayButtonsContainer.appendChild(moreButton);
-      updateDayNumbers();
-      showDayContent(1);
+      // 가져온 데이터를 로컬스토리지에 저장
+      localStorage.setItem("tripData", JSON.stringify(data));
+      updateTripUI(data);
     })
     .catch((error) => console.error("Error loading itinerary:", error));
-});
+}
+
+function updateTripUI(data) {
+  const headerTitle = document.querySelector("header h1");
+  if (headerTitle && data.title) {
+    headerTitle.innerText = data.title;
+  }
+  const overviewElems = document.querySelectorAll(".fa-map-marker-alt");
+  overviewElems.forEach((el) => {
+    const parent = el.parentNode;
+    if (parent) {
+      parent.querySelector("p.font-medium").innerText = data.location.address;
+    }
+  });
+  const dayButtonsContainer = document.getElementById("day-buttons-container");
+  const dayContentsContainer = document.getElementById(
+    "day-contents-container"
+  );
+  dayButtonsContainer.innerHTML = "";
+  dayContentsContainer.innerHTML = "";
+
+  data.itinerary.forEach((dayData, index) => {
+    const dayNumber = index + 1;
+    const dayButton = document.createElement("button");
+    dayButton.className =
+      "day-button px-4 py-2 " +
+      (dayNumber === 1
+        ? "bg-custom text-white"
+        : "text-gray-600 hover:bg-gray-100 !rounded-button");
+    dayButton.id = "day-btn-" + dayNumber;
+    dayButton.innerText = "Day " + dayNumber;
+    dayButton.onclick = function () {
+      showDayContent(dayNumber);
+    };
+    dayButtonsContainer.appendChild(dayButton);
+    const dayContent = document.createElement("div");
+    dayContent.id = "day" + dayNumber + "-content";
+    dayContent.className =
+      "day-content " +
+      (dayNumber === 1 ? "" : "hidden") +
+      " space-y-8 transition-all duration-300 ease-in-out";
+    const eventsContainer = document.createElement("div");
+    eventsContainer.className = "events-container border-l-2 border-custom";
+    eventsContainer.id = "day" + dayNumber + "-events-container";
+    if (dayData.events && dayData.events.length > 0) {
+      dayData.events.forEach((eventData) => {
+        const eventObj = {
+          id:
+            eventData.id ||
+            "event-" + Date.now() + Math.floor(Math.random() * 1000),
+          time: eventData.time,
+          title: eventData.title,
+          location: eventData.location,
+          details: eventData.details, // details 그대로 전달
+        };
+        const eventElem = createEventElement(dayNumber, eventObj);
+        eventsContainer.appendChild(eventElem);
+      });
+    } else {
+      eventsContainer.appendChild(createEmptyMessage(dayNumber));
+    }
+    dayContent.appendChild(eventsContainer);
+    dayContentsContainer.appendChild(dayContent);
+  });
+
+  const moreButton = document.createElement("button");
+  moreButton.className =
+    "px-4 py-2 text-gray-600 hover:bg-gray-100 !rounded-button";
+  moreButton.innerText = "More";
+  moreButton.onclick = addDay;
+  dayButtonsContainer.appendChild(moreButton);
+  updateDayNumbers();
+  showDayContent(1);
+  window.tripData = data;
+  updateTripOverview(data);
+  updateWeatherForecast(data);
+}

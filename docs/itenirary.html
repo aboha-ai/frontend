@@ -73,57 +73,39 @@
         <!-- 왼쪽 사이드바 (여행 개요 & 날씨) -->
         <div class="col-span-4">
           <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h2 class="text-xl font-semibold mb-4">Trip Overview</h2>
+            <h2 class="text-xl font-semibold mb-4">여행 개요</h2>
             <div class="space-y-4">
               <div class="flex items-center gap-3">
                 <i class="fas fa-calendar text-custom"></i>
                 <div>
-                  <p class="text-sm text-gray-600">Duration</p>
-                  <p class="font-medium">10 Days (May 15 - 24, 2024)</p>
+                  <p class="text-sm text-gray-600">여행 기간</p>
+                  <p id="trip-duration" class="font-medium"></p>
                 </div>
               </div>
               <div class="flex items-center gap-3">
                 <i class="fas fa-map-marker-alt text-custom"></i>
                 <div>
-                  <p class="text-sm text-gray-600">Starting Point</p>
-                  <p class="font-medium">Tokyo Narita Airport (NRT)</p>
+                  <p class="text-sm text-gray-600">출발 장소</p>
+                  <p id="starting-point" class="font-medium"></p>
                 </div>
               </div>
               <div class="flex items-center gap-3">
                 <i class="fas fa-users text-custom"></i>
                 <div>
-                  <p class="text-sm text-gray-600">Travelers</p>
-                  <p class="font-medium">2 Adults</p>
+                  <p class="text-sm text-gray-600">여행 인원</p>
+                  <p class="font-medium">2명</p>
                 </div>
               </div>
             </div>
           </div>
           <div class="bg-white rounded-lg shadow-sm p-6">
-            <h2 class="text-xl font-semibold mb-4">Weather Forecast</h2>
-            <div class="space-y-4">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <i class="fas fa-sun text-yellow-500 text-2xl"></i>
-                  <div>
-                    <p class="font-medium">Today</p>
-                    <p class="text-sm text-gray-600">Sunny</p>
-                  </div>
-                </div>
-                <p class="text-lg font-medium">24°C</p>
-              </div>
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <i class="fas fa-cloud text-gray-400 text-2xl"></i>
-                  <div>
-                    <p class="font-medium">Tomorrow</p>
-                    <p class="text-sm text-gray-600">Partly Cloudy</p>
-                  </div>
-                </div>
-                <p class="text-lg font-medium">22°C</p>
-              </div>
+            <h2 class="text-xl font-semibold mb-4">날씨 예보</h2>
+            <div class="weather-forecast space-y-4">
+              <!-- 날씨 API 호출 결과가 이 영역에 채워집니다 -->
             </div>
           </div>
         </div>
+
         <!-- 오른쪽 컨텐츠 영역 (Day 관리 및 이벤트 기능) -->
         <div class="col-span-8">
           <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
