@@ -5,7 +5,6 @@ async function fetchTouristData() {
   const storedData = localStorage.getItem("touristData");
 
   if (storedData) {
-    localStorage.clear();
     console.log("📌 로컬 스토리지에서 데이터 로드");
     const parsedData = JSON.parse(storedData);
     console.log("📌 로컬 스토리지 데이터:", parsedData);
@@ -148,3 +147,21 @@ window.onload = async () => {
     console.error("❌ initMap 함수가 정의되지 않았습니다.");
   }
 };
+
+document.addEventListener("DOMContentLoaded", () => {
+  const refreshBtn = document.getElementById("refresh-btn");
+
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", async () => {
+      console.log("🔄 새로운 추천을 요청합니다...");
+
+      // 1. 로컬 스토리지 초기화
+      localStorage.removeItem("touristData");
+
+      // 2. API 호출하여 새로운 추천 데이터 받아오기
+      await updateTouristSpotContent();
+
+      console.log("✅ 새로운 추천이 완료되었습니다!");
+    });
+  }
+});
