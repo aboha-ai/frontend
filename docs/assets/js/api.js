@@ -1,6 +1,21 @@
 const API_KEY = "AIzaSyBQ6n3ZpaQ8ocsvrog1CqgZBJW1ilgj5Lg";
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
+// null 값을 'null' 문자열로 변환하고, 값이 null인 키는 출력하지 않도록 처리
+function sanitizeObject(obj) {
+  const sanitizedObj = {};
+
+  Object.keys(obj).forEach((key) => {
+    if (obj[key] === null) {
+      sanitizedObj[key] = "null"; // 값이 null이면 'null' 문자열로 처리
+    } else if (obj[key]) {
+      sanitizedObj[key] = obj[key]; // 값이 null이 아니면 그대로 저장
+    }
+  });
+
+  return sanitizedObj;
+}
+
 async function fetchTouristData() {
   const storedData = localStorage.getItem("touristData");
 
@@ -26,7 +41,7 @@ async function fetchTouristData() {
                 {
                     "hotels": [
                         {
-                            "name": "호텔명",
+                            "name": "이름",
                             "category": "호텔",
                             "link": "웹사이트 URL",
                             "price": "1박 가격",
@@ -41,7 +56,7 @@ async function fetchTouristData() {
                     ],
                     "restaurants": [
                         {
-                            "name": "식당명",
+                            "name": "이름",
                             "category": "식당",
                             "link": "웹사이트 URL",
                             "price": "평균 가격",
@@ -56,7 +71,7 @@ async function fetchTouristData() {
                     ],
                     "touristSpots": [
                         {
-                            "name": "관광지명",
+                            "name": "이름",
                             "category": "관광지",
                             "link": "웹사이트 URL",
                             "price": "입장료",
@@ -95,16 +110,24 @@ async function fetchTouristData() {
   }
 }
 
-async function updateTouristSpotContent() {
-  const { touristSpots } = await fetchTouristData();
+async function updateContent(category) {
+  const { hotels, restaurants, touristSpots } = await fetchTouristData();
+  const dataMap = {
+    호텔: hotels,
+    맛집: restaurants,
+    관광지: touristSpots,
+  };
 
-  console.log("📌 관광지 데이터:", touristSpots);
+  console.log(`📌 ${category} 데이터:`, dataMap[category]);
 
-  const contentContainer = document.getElementById("관광지-content");
-  contentContainer.innerHTML = "";
+  const contentContainer = document.getElementById(`${category}-content`);
+  contentContainer.innerHTML = ""; // 기존 내용 초기화
 
-  touristSpots.forEach((spot) => {
-    console.log("📌 장소:", spot);
+  dataMap[category].forEach((place) => {
+    console.log(`📌 ${category} 장소:`, place);
+
+    // sanitize the place object to handle null values
+    const sanitizedPlace = sanitizeObject(place);
 
     const placeElement = document.createElement("div");
     placeElement.classList.add(
@@ -117,15 +140,19 @@ async function updateTouristSpotContent() {
 
     placeElement.innerHTML = `
       <div class="flex-1">
-          <h3 class="font-medium">${spot.name}</h3>
+          <h3 class="font-medium">${sanitizedPlace.name || "null"}</h3>
           <div class="text-sm text-gray-600">
               <i class="fas fa-clock text-blue-400"></i> ${
-                spot.hours || "운영 시간 없음"
+                sanitizedPlace.hours || "운영 시간 없음"
               }
-              <span class="ml-2 text-green-500">${spot.price || "무료"}</span>
+              <span class="ml-2 text-green-500">${
+                sanitizedPlace.price || "무료"
+              }</span>
           </div>
       </div>
-      <button onclick='showLocation(${JSON.stringify(spot.location)})' 
+      <button onclick='showLocation(${JSON.stringify(
+        sanitizedPlace.location
+      )})' 
               class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
           <i class="fas fa-map-marker-alt"></i>
       </button>
@@ -137,31 +164,12 @@ async function updateTouristSpotContent() {
 
 window.onload = async () => {
   // 1. 먼저 관광지 데이터를 로드
-  await updateTouristSpotContent();
+  await updateContent("관광지");
 
   // 2. Google Maps API에서 initMap 호출
-  // initMap이 정의되었는지 확인합니다.
   if (window.initMap) {
     initMap();
   } else {
     console.error("❌ initMap 함수가 정의되지 않았습니다.");
   }
 };
-
-document.addEventListener("DOMContentLoaded", () => {
-  const refreshBtn = document.getElementById("refresh-btn");
-
-  if (refreshBtn) {
-    refreshBtn.addEventListener("click", async () => {
-      console.log("🔄 새로운 추천을 요청합니다...");
-
-      // 1. 로컬 스토리지 초기화
-      localStorage.removeItem("touristData");
-
-      // 2. API 호출하여 새로운 추천 데이터 받아오기
-      await updateTouristSpotContent();
-
-      console.log("✅ 새로운 추천이 완료되었습니다!");
-    });
-  }
-});
