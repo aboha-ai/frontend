@@ -1,10 +1,11 @@
-// app.js - 최종 개선 코드 (여행 개요 수정 포함)
+// app.js - 최종 개선 코드 (여행 개요 수정 포함, 나라/도시 입력 필드 분리 및 Google Autocomplete 적용, 날씨 API 수정)
 
+// 전역 변수 선언
 let currentDay = 1;
 let totalDays = 1; // 초기 Day 수
 let currentEventEditing = null;
-// temp api key
-const GOOGLE_MAP_API = "your_key";
+// API 키들
+const GOOGLE_MAP_API = "AIzaSyCw3yxyhLMb5QkP19vsufRq9Q2Bco2ATks";
 const WEATHER_API_KEY = "6JMUS56QRRG2LJMKYWKXTPH7Y";
 const accessKey = "jKmpPpL00k6bhiDWQzwXElaHu9DZpB9FjYwqT00yC7I";
 
@@ -19,6 +20,7 @@ function assignUniqueIds(data) {
   data.itinerary.forEach((day) => {
     day.events.forEach((event, index) => {
       if (!event.id) {
+        // 수정: 백틱(``)을 사용하여 템플릿 문자열로 변경
         event.id = `event-${day.day}-${index}-${Date.now()}-${Math.floor(
           Math.random() * 1000
         )}`;
@@ -33,6 +35,7 @@ function createEmptyMessage(dayNumber) {
   const empty = document.createElement("div");
   empty.className =
     "flex flex-col items-center justify-center py-20 bg-gray-50 rounded-lg space-y-6 empty-message";
+  // 수정: 백틱(``)으로 멀티라인 문자열 사용
   empty.innerHTML = `
     <div class="text-gray-500 text-center">
       <h3 class="text-xl font-medium mb-2">No events planned for this day</h3>
@@ -115,9 +118,10 @@ function addDay() {
   dayContent.className =
     "day-content hidden space-y-8 transition-all duration-300 ease-in-out";
   dayContent.id = "day" + newDayNumber + "-content";
-  dayContent.innerHTML = `<div class="events-container border-l-2 border-custom" id="day${newDayNumber}-events-container">${
-    createEmptyMessage(newDayNumber).outerHTML
-  }</div>`;
+  // 수정: HTML 문자열 할당 시 백틱(``) 사용
+  dayContent.innerHTML = `<div class="events-container border-l-2 border-custom" id="day${newDayNumber}-events-container">
+    ${createEmptyMessage(newDayNumber).outerHTML}
+  </div>`;
 
   document.getElementById("day-contents-container").appendChild(dayContent);
 
@@ -185,6 +189,7 @@ function createEventElement(dayNumber, eventData) {
 
   let presetHtml = "";
   if (eventData.details) {
+    // 수정: 백틱(``) 사용
     presetHtml = `<ul class="text-gray-600 list-disc pl-5">
           ${
             eventData.details.open_time
@@ -328,6 +333,8 @@ function openEventModal(mode, eventId = null) {
   }
   modal.classList.remove("hidden");
   modal.classList.add("flex");
+  // 수정: event-location 입력란에도 Google Autocomplete 적용
+  loadGoogleMapsApi(initializeEventLocationAutocomplete);
 }
 function openAddEventModal() {
   openEventModal("add");
@@ -473,6 +480,7 @@ function updateTripOverview(data) {
     if (durationBlock) {
       const durationText = durationBlock.querySelector("p.font-medium");
       if (durationText) {
+        // 수정: 백틱 사용
         durationText.innerText = `${duration} Days (${startStr} - ${endStr})`;
       }
     }
@@ -482,16 +490,23 @@ function updateTripOverview(data) {
     if (startingBlock) {
       const startingText = startingBlock.querySelector("p.font-medium");
       if (startingText) {
-        startingText.innerText = data.location.address;
+        // 수정: header에 "나라, 도시" 형식으로 표시
+        startingText.innerText =
+          data.location.country + ", " + data.location.city;
       }
     }
   }
   const headerRoute = document.getElementById("header-route");
-  if (headerRoute && data.location && data.location.address) {
-    headerRoute.innerText = data.location.address;
+  if (
+    headerRoute &&
+    data.location &&
+    data.location.country &&
+    data.location.city
+  ) {
+    headerRoute.innerText = data.location.country + ", " + data.location.city;
   }
   updateBackgroundImage(
-    data.location.city || data.location.address || "Travel"
+    data.location.city || data.location.country || "Travel"
   );
 }
 
@@ -530,12 +545,14 @@ function setHeaderBackground(imageUrl) {
 
 // 날씨 정보 받아오기
 function updateWeatherForecast(data) {
-  const tripLocation = data.location.city || data.location.address || "Tokyo";
+  // 수정: 도시가 아닌 나라와 도시를 모두 사용할 수 있도록 수정 (여기서는 city 우선, 없으면 country)
+  const tripLocation = data.location.city || data.location.country;
   const today = new Date();
   const startDate = today.toISOString().split("T")[0];
   const endDate = new Date(today);
   endDate.setDate(endDate.getDate() + 2);
   const endDateStr = endDate.toISOString().split("T")[0];
+  // 수정: URL을 백틱(``)으로 감싸 올바른 템플릿 문자열로 작성
   const weatherApiUrl = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(
     tripLocation
   )}/${startDate}/${endDateStr}?unitGroup=metric&lang=ko&key=${WEATHER_API_KEY}&contentType=json`;
@@ -561,6 +578,7 @@ function updateWeatherForecast(data) {
             <p class="text-lg font-medium">${Math.round(day.temp)}°C</p>
           </div>
         `;
+        // 수정: innerHTML에 백틱 사용
         forecastContainer.innerHTML += weatherHTML;
       });
     })
@@ -589,26 +607,27 @@ function enableEditableTitle() {
   }
 }
 
-// 여행 개요 수정 모달 열기 함수
+// 여행 개요 수정 모달 열기 함수 (여행 장소를 나라와 도시로 분리)
 function openOverviewModal() {
   const modal = document.getElementById("overview-modal");
   if (!modal) return;
-  if (
-    window.tripData &&
-    window.tripData.location &&
-    window.tripData.location.arrival_time
-  ) {
-    document.getElementById("overview-start-date").value =
-      window.tripData.location.arrival_time.split("T")[0];
-  }
   if (window.tripData && window.tripData.location) {
-    document.getElementById("overview-location").value =
-      window.tripData.location.address;
+    // 수정: 나라와 도시 입력 필드로 분리하여 기존 값을 채움
+    document.getElementById("overview-country").value =
+      window.tripData.location.country || "";
+    document.getElementById("overview-city").value =
+      window.tripData.location.city || "";
+    if (window.tripData.location.arrival_time) {
+      document.getElementById("overview-start-date").value =
+        window.tripData.location.arrival_time.split("T")[0];
+    }
   }
   document.getElementById("overview-travelers").value =
     window.tripData.travelers || "1";
   modal.classList.remove("hidden");
   modal.classList.add("flex");
+  // 동적으로 Google Maps API 로드 후 Autocomplete 초기화
+  loadGoogleMapsApi(initializeLocationAutocomplete);
 }
 
 // 여행 개요 수정 모달 닫기 함수
@@ -623,16 +642,103 @@ function closeOverviewModal() {
 function overviewModalSubmit(e) {
   e.preventDefault();
   const startDate = document.getElementById("overview-start-date").value;
-  const location = document.getElementById("overview-location").value;
+  const country = document.getElementById("overview-country").value;
+  const city = document.getElementById("overview-city").value;
   const travelers = document.getElementById("overview-travelers").value;
   if (window.tripData && window.tripData.location) {
     window.tripData.location.arrival_time = startDate + "T00:00:00";
-    window.tripData.location.address = location;
+    // 수정: 나라와 도시를 각각 저장하고, address는 "나라, 도시" 형식으로 구성
+    window.tripData.location.country = country;
+    window.tripData.location.city = city;
+    window.tripData.location.address =
+      country && city ? country + ", " + city : country || city;
   }
   window.tripData.travelers = travelers;
   updateLocalStorage();
   updateTripUI(window.tripData);
   closeOverviewModal();
+}
+
+// Google Places Autocomplete 초기화 함수 (나라와 도시 입력 필드에 적용)
+function initializeLocationAutocomplete() {
+  // 초기화: 나라 입력 필드 (overview-country)
+  const countryInput = document.getElementById("overview-country");
+  if (countryInput) {
+    const countryAutocomplete = new google.maps.places.Autocomplete(
+      countryInput,
+      {
+        types: ["(regions)"],
+      }
+    );
+    countryAutocomplete.addListener("place_changed", function () {
+      const place = countryAutocomplete.getPlace();
+      if (place && place.address_components) {
+        const countryComp = place.address_components.find((comp) =>
+          comp.types.includes("country")
+        );
+        if (countryComp) {
+          countryInput.value = countryComp.long_name;
+        }
+      }
+    });
+  }
+  // 초기화: 도시 입력 필드 (overview-city)
+  const cityInput = document.getElementById("overview-city");
+  if (cityInput) {
+    const cityAutocomplete = new google.maps.places.Autocomplete(cityInput, {
+      types: ["(cities)"],
+    });
+    cityAutocomplete.addListener("place_changed", function () {
+      const place = cityAutocomplete.getPlace();
+      if (place && place.address_components) {
+        let cityName = "";
+        place.address_components.forEach((comp) => {
+          if (comp.types.includes("locality")) {
+            cityName = comp.long_name;
+          }
+        });
+        if (!cityName) {
+          place.address_components.forEach((comp) => {
+            if (comp.types.includes("administrative_area_level_1")) {
+              cityName = comp.long_name;
+            }
+          });
+        }
+        cityInput.value = cityName;
+      }
+    });
+  }
+}
+
+// Google Maps API 동적 로드 함수 (API 키는 app.js의 GOOGLE_MAP_API 사용)
+function loadGoogleMapsApi(callback) {
+  const existingScript = document.getElementById("googleMaps");
+  if (!existingScript) {
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAP_API}&libraries=places`;
+    script.id = "googleMaps";
+    script.async = true;
+    script.defer = true;
+    script.onload = callback;
+    document.head.appendChild(script);
+  } else {
+    if (callback) callback();
+  }
+}
+
+// 새로운 함수: event-location 입력란에 Google Autocomplete 적용 (이벤트 모달)
+function initializeEventLocationAutocomplete() {
+  const input = document.getElementById("event-location");
+  if (!input) return;
+  const autocomplete = new google.maps.places.Autocomplete(input, {
+    types: ["geocode"],
+  });
+  autocomplete.addListener("place_changed", function () {
+    const place = autocomplete.getPlace();
+    if (place.formatted_address) {
+      input.value = place.formatted_address;
+    }
+  });
 }
 
 // 여행 개요 수정 모달을 "trip-overview" 영역 클릭 시 열도록 설정
@@ -696,7 +802,8 @@ function updateTripUI(data) {
     }
     const startingPointEl = overviewEl.querySelector("#starting-point");
     if (startingPointEl) {
-      startingPointEl.innerText = data.location.address;
+      startingPointEl.innerText =
+        data.location.country + ", " + data.location.city;
     }
     const travelersEl = overviewEl.querySelector("#trip-travelers");
     if (travelersEl) {
@@ -707,7 +814,8 @@ function updateTripUI(data) {
   overviewElems.forEach((el) => {
     const parent = el.parentNode;
     if (parent) {
-      parent.querySelector("p.font-medium").innerText = data.location.address;
+      parent.querySelector("p.font-medium").innerText =
+        data.location.country + ", " + data.location.city;
     }
   });
   const dayButtonsContainer = document.getElementById("day-buttons-container");
