@@ -1,4 +1,4 @@
-// app.js - JavaScript 코드
+// app.js - 최종 개선 코드 (자동 id 부여 포함)
 
 let currentDay = 1;
 let totalDays = 1; // 초기 Day 수
@@ -11,6 +11,21 @@ const WEATHER_API_KEY = "6JMUS56QRRG2LJMKYWKXTPH7Y";
 function getTimeInMinutes(timeStr) {
   const parts = timeStr.split(":");
   return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+}
+
+// id가 없으면 고유 id를 부여하는 함수
+function assignUniqueIds(data) {
+  data.itinerary.forEach((day) => {
+    day.events.forEach((event, index) => {
+      if (!event.id) {
+        // 기존 이벤트가 여러 개일 수 있으므로 day와 index 정보를 활용
+        event.id = `event-${day.day}-${index}-${Date.now()}-${Math.floor(
+          Math.random() * 1000
+        )}`;
+      }
+    });
+  });
+  return data;
 }
 
 // 빈 상태 메시지 생성 (이벤트가 없을 경우)
@@ -82,32 +97,42 @@ function showDayContent(dayNumber) {
   currentDay = dayNumber;
 }
 
-// More 버튼 클릭 시, 현재 Day 뒤에 새 Day 추가
+// More 버튼 클릭 시, 현재 Day 뒤에 새 Day 추가 및 데이터 업데이트
 function addDay() {
-  const newDayNumber = currentDay + 1;
-  const dayBtn = document.createElement("button");
-  dayBtn.className =
+  const newDayNumber = totalDays + 1;
+  const dayButton = document.createElement("button");
+  dayButton.className =
     "day-button px-4 py-2 text-gray-600 hover:bg-gray-100 !rounded-button";
-  dayBtn.innerText = "Day " + newDayNumber;
-  dayBtn.onclick = function () {
+  dayButton.innerText = "Day " + newDayNumber;
+  dayButton.onclick = function () {
     showDayContent(newDayNumber);
   };
-  const currentBtn = document.getElementById("day-btn-" + currentDay);
-  currentBtn.insertAdjacentElement("afterend", dayBtn);
+
+  const currentBtn = document.getElementById("day-btn-" + totalDays);
+  currentBtn.insertAdjacentElement("afterend", dayButton);
+
   const dayContent = document.createElement("div");
   dayContent.className =
     "day-content hidden space-y-8 transition-all duration-300 ease-in-out";
-  dayContent.innerHTML = `
-    <div class="events-container border-l-2 border-custom" id="day${newDayNumber}-events-container">
-      ${createEmptyMessage(newDayNumber).outerHTML}
-    </div>
-  `;
-  const currentContent = document.getElementById(
-    "day" + currentDay + "-content"
-  );
-  currentContent.insertAdjacentElement("afterend", dayContent);
+  dayContent.id = "day" + newDayNumber + "-content";
+  dayContent.innerHTML = `<div class="events-container border-l-2 border-custom" id="day${newDayNumber}-events-container">${
+    createEmptyMessage(newDayNumber).outerHTML
+  }</div>`;
+
+  document.getElementById("day-contents-container").appendChild(dayContent);
+
+  // tripData 업데이트 후 즉시 저장
+  if (window.tripData) {
+    window.tripData.itinerary.push({
+      day: newDayNumber,
+      date: new Date().toISOString().split("T")[0],
+      events: [],
+    });
+    updateLocalStorage();
+  }
   updateDayNumbers();
   showDayContent(newDayNumber);
+  console.log("Day 추가 후 localStorage:", localStorage.getItem("tripData"));
 }
 
 // Delete Day 모달 열기
@@ -118,7 +143,7 @@ function openDeleteDayModal() {
   document.getElementById("delete-day-modal").classList.add("flex");
 }
 
-// Delete Day 모달 확인 시 현재 Day 삭제
+// Delete Day 모달 확인 시 현재 Day 삭제 (개선된 코드)
 function confirmDeleteDay() {
   const btnToRemove = document.getElementById("day-btn-" + currentDay);
   const contentToRemove = document.getElementById(
@@ -126,24 +151,35 @@ function confirmDeleteDay() {
   );
   if (btnToRemove) btnToRemove.remove();
   if (contentToRemove) contentToRemove.remove();
-  updateDayNumbers();
-  const remainingButtons = document.querySelectorAll(".day-button");
-  if (remainingButtons.length > 0) {
-    const firstDayNumber = parseInt(
-      remainingButtons[0].innerText.replace("Day ", "")
+
+  if (window.tripData) {
+    // 현재 삭제 대상 Day 제거 및 남은 일정의 day 번호 재할당
+    window.tripData.itinerary = window.tripData.itinerary.filter(
+      (day) => day.day !== currentDay
     );
-    showDayContent(firstDayNumber);
+    window.tripData.itinerary.forEach((day, index) => {
+      day.day = index + 1;
+    });
+    updateLocalStorage();
+  }
+
+  updateDayNumbers();
+  if (document.querySelectorAll(".day-button").length > 0) {
+    showDayContent(1);
+    currentDay = 1;
   } else {
     totalDays = 0;
     addDay();
   }
+  console.log("Day 삭제 후 localStorage:", localStorage.getItem("tripData"));
   document.getElementById("delete-day-modal").classList.add("hidden");
-  document.getElementById("delete-day-modal").classList.remove("flex");
 }
 
 // 이벤트 카드 생성 함수
 function createEventElement(dayNumber, eventData) {
-  const eventId = eventData.id || "event-" + Date.now();
+  // id가 없는 경우 자동 할당
+  const eventId =
+    eventData.id || "event-" + Date.now() + Math.floor(Math.random() * 1000);
   eventData.id = eventId;
   const container = document.createElement("div");
   container.className = "relative pl-8 border-l-2 border-custom event-item";
@@ -204,23 +240,13 @@ function createEventElement(dayNumber, eventData) {
               </button>
             </div>
           </div>
-          <!-- 상세 내용 영역: 왼쪽은 details 항목, 오른쪽은 Google Map -->
           <div id="${eventId}-details" class="hidden transition-all duration-300 mt-4 p-4 bg-white rounded shadow">
             <div class="grid grid-cols-2 gap-4">
               <div>
                 ${detailsHtml}
               </div>
               <div>
-                <iframe
-                  src="https://www.google.com/maps/embed/v1/place?key=${GOOGLE_MAP_API}&q=${encodeURIComponent(
-    eventData.location
-  )}"
-                  width="100%"
-                  height="200"
-                  style="border:0;"
-                  allowfullscreen
-                  loading="lazy">
-                </iframe>
+                ${/* 지도 iframe 부분 주석 처리 */ ""}
               </div>
             </div>
           </div>
@@ -235,7 +261,7 @@ function toggleDetails(detailsId) {
   if (elem) elem.classList.toggle("hidden");
 }
 
-// 해당 Day의 이벤트들을 시간순으로 정렬
+// 해당 Day의 이벤트들을 시간순으로 정렬 (DOM상 정렬)
 function sortEvents(dayNumber) {
   const eventsContainer = document.getElementById(
     "day" + dayNumber + "-events-container"
@@ -286,7 +312,6 @@ function openEditEventModal(eventId) {
   openEventModal("edit", eventId);
 }
 
-// 모달 폼 제출 시 이벤트 추가/수정 및 시간순 정렬 처리
 function eventModalSubmit(e) {
   e.preventDefault();
   const eventId = document.getElementById("event-id").value;
@@ -294,45 +319,69 @@ function eventModalSubmit(e) {
   const time = document.getElementById("event-time").value;
   const location = document.getElementById("event-location").value;
   const description = document.getElementById("event-description").value;
-  const eventData = { title, time, location, description };
-  const dayNumber = currentDay;
-  let eventsContainer = document.getElementById(
-    "day" + dayNumber + "-events-container"
-  );
-  const emptyMsg = eventsContainer.querySelector(".empty-message");
-  if (emptyMsg) emptyMsg.remove();
 
+  const eventData = {
+    id: eventId || "event-" + Date.now() + Math.floor(Math.random() * 1000),
+    title,
+    time,
+    location,
+    description,
+  };
+
+  let eventsContainer = document.getElementById(
+    "day" + currentDay + "-events-container"
+  );
+  if (!eventsContainer) {
+    const dayContent = document.getElementById("day" + currentDay + "-content");
+    dayContent.innerHTML = "";
+    eventsContainer = document.createElement("div");
+    eventsContainer.className = "events-container";
+    eventsContainer.id = "day" + currentDay + "-events-container";
+    dayContent.appendChild(eventsContainer);
+  }
+
+  // currentDay에 해당하는 day 데이터 찾기
+  let dayData = window.tripData.itinerary.find((day) => day.day === currentDay);
+  if (!dayData) {
+    dayData = {
+      day: currentDay,
+      date: new Date().toISOString().split("T")[0],
+      events: [],
+    };
+    window.tripData.itinerary.push(dayData);
+  }
+
+  // 수정 모드: 기존 이벤트 교체
   if (eventId) {
+    const existingEventIndex = dayData.events.findIndex(
+      (e) => e.id === eventId
+    );
+    if (existingEventIndex !== -1) {
+      dayData.events[existingEventIndex] = eventData;
+    }
     const eventElem = document.getElementById(eventId);
     if (eventElem) {
-      const newEventElem = createEventElement(dayNumber, {
-        id: eventId,
-        title,
-        time,
-        location,
-        description,
-      });
-      eventElem.parentNode.replaceChild(newEventElem, eventElem);
+      eventElem.replaceWith(createEventElement(currentDay, eventData));
     }
   } else {
-    if (!eventsContainer) {
-      const dayContent = document.getElementById(
-        "day" + dayNumber + "-content"
-      );
-      dayContent.innerHTML = "";
-      eventsContainer = document.createElement("div");
-      eventsContainer.className = "events-container";
-      eventsContainer.id = "day" + dayNumber + "-events-container";
-      dayContent.appendChild(eventsContainer);
-    }
-    const newEventElem = createEventElement(dayNumber, eventData);
-    eventsContainer.appendChild(newEventElem);
+    // 추가 모드: 새 이벤트 추가
+    dayData.events.push(eventData);
+    eventsContainer.appendChild(createEventElement(currentDay, eventData));
   }
-  sortEvents(dayNumber);
+  // events 배열 자체를 시간순 정렬한 후 즉시 저장
+  dayData.events.sort(
+    (a, b) => getTimeInMinutes(a.time) - getTimeInMinutes(b.time)
+  );
+  sortEvents(currentDay);
+  updateLocalStorage();
+  console.log(
+    "이벤트 추가/수정 후 localStorage:",
+    localStorage.getItem("tripData")
+  );
+
   document.getElementById("event-id").value = "";
   document.getElementById("event-form").reset();
   document.getElementById("add-event-modal").classList.add("hidden");
-  document.getElementById("add-event-modal").classList.remove("flex");
 }
 
 // Delete Event 모달 열기 및 처리
@@ -347,10 +396,21 @@ function openDeleteEventModal(eventId, eventTitle) {
 function confirmDeleteEvent() {
   const modal = document.getElementById("delete-event-modal");
   const eventId = modal.getAttribute("data-event-id");
-  const eventElem = document.getElementById(eventId);
-  if (eventElem) {
-    eventElem.remove();
+
+  if (window.tripData) {
+    const currentDayData = window.tripData.itinerary.find(
+      (day) => day.day === currentDay
+    );
+    if (currentDayData) {
+      currentDayData.events = currentDayData.events.filter(
+        (event) => event.id !== eventId
+      );
+    }
   }
+
+  const eventElem = document.getElementById(eventId);
+  if (eventElem) eventElem.remove();
+
   const eventsContainer = document.getElementById(
     "day" + currentDay + "-events-container"
   );
@@ -361,28 +421,25 @@ function confirmDeleteEvent() {
     eventsContainer.innerHTML = "";
     eventsContainer.appendChild(createEmptyMessage(currentDay));
   }
+
+  updateLocalStorage();
+  console.log("이벤트 삭제 후 localStorage:", localStorage.getItem("tripData"));
   modal.classList.add("hidden");
-  modal.classList.remove("flex");
 }
 
 function updateTripOverview(data) {
-  // 시작일은 data.location.arrival_time를 사용 (또는 data.itinerary[0].date)
   let startDate = new Date(data.location.arrival_time);
-  let duration = totalDays; // day 버튼 개수
+  let duration = totalDays;
   let endDate = new Date(startDate);
   endDate.setDate(endDate.getDate() + duration - 1);
-
-  // 날짜 형식 지정 (예: "Apr 15, 2025")
   const options = { month: "short", day: "numeric", year: "numeric" };
   let startStr = startDate.toLocaleDateString("en-US", options);
   let endStr = endDate.toLocaleDateString("en-US", options);
 
-  // Trip Overview 영역 선택 (Overview 컨테이너의 고유 클래스로 선택)
   const overviewContainer = document.querySelector(
     ".bg-white.rounded-lg.shadow-sm.p-6.mb-6"
   );
   if (overviewContainer) {
-    // Duration: 첫 번째 flex 항목에 해당 (순서가 변경되지 않는 한)
     const durationBlock = overviewContainer.querySelectorAll(
       ".flex.items-center.gap-3"
     )[0];
@@ -392,7 +449,6 @@ function updateTripOverview(data) {
         durationText.innerText = `${duration} Days (${startStr} - ${endStr})`;
       }
     }
-    // Starting Point: 두 번째 flex 항목
     const startingBlock = overviewContainer.querySelectorAll(
       ".flex.items-center.gap-3"
     )[1];
@@ -402,7 +458,6 @@ function updateTripOverview(data) {
         startingText.innerText = data.location.address;
       }
     }
-    // Travelers는 그대로 두거나 JSON에 해당 데이터가 있다면 갱신
   }
 }
 
@@ -425,9 +480,7 @@ function updateWeatherForecast(data) {
       const forecastContainer = document.querySelector(".weather-forecast");
       if (!forecastContainer) return;
 
-      // 도시 이름을 헤더로 추가 (예: "도쿄 날씨")
       forecastContainer.innerHTML = `<div class="text-lg font-medium mb-2">${tripLocation} 날씨</div>`;
-
       weatherData.days.forEach((day) => {
         const date = new Date(day.datetime);
         const options = { month: "short", day: "numeric", year: "numeric" };
@@ -450,14 +503,19 @@ function updateWeatherForecast(data) {
     .catch((error) => console.error("Error fetching weather data:", error));
 }
 
-// 초기화 (DOMContentLoaded)
+// localStorage 업데이트 함수 (즉시 저장)
+function updateLocalStorage() {
+  if (window.tripData) {
+    localStorage.setItem("tripData", JSON.stringify(window.tripData));
+  }
+}
+
+// DOMContentLoaded를 하나의 이벤트 리스너로 통합 (로컬스토리지에서 즉시 데이터 불러오기)
 document.addEventListener("DOMContentLoaded", function () {
   updateDayNumbers();
   showDayContent(1);
-});
 
-// 시간 입력 관련: 24시간제로 강제 (Safari 대응)
-document.addEventListener("DOMContentLoaded", function () {
+  // 시간 입력: 24시간제 강제 (Safari 대응)
   let timeInput = document.getElementById("event-time");
   if (timeInput) {
     timeInput.addEventListener("focus", function () {
@@ -471,36 +529,25 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   }
-});
 
-// test_data.json 파일을 불러와 초기 일정 데이터를 구성
-document.addEventListener("DOMContentLoaded", function () {
-  // 먼저 로컬스토리지에 데이터가 있는지 확인합니다.
-  // data 이름 채크
-  const localData = localStorage.getItem("testData");
+  // 로컬스토리지에서 데이터 불러오기 및 id 자동 할당
+  const localData = localStorage.getItem("tripData");
   if (localData) {
     try {
-      const data = JSON.parse(localData);
-      updateTripUI(data);
-      return;
+      let data = JSON.parse(localData);
+      data = assignUniqueIds(data);
+      window.tripData = data;
+      updateLocalStorage();
+      updateTripUI(window.tripData);
     } catch (e) {
       console.error("Local data 파싱 에러:", e);
     }
+  } else {
+    console.warn("localStorage에 tripData가 없습니다.");
   }
-  // 로컬스토리지에 데이터가 없거나 파싱 실패 시 test_data.json을 fetch
-  fetchTripData();
+  updateDayNumbers();
+  showDayContent(1);
 });
-
-function fetchTripData() {
-  fetch("test_data.json")
-    .then((response) => response.json())
-    .then((data) => {
-      // 가져온 데이터를 로컬스토리지에 저장
-      localStorage.setItem("tripData", JSON.stringify(data));
-      updateTripUI(data);
-    })
-    .catch((error) => console.error("Error loading itinerary:", error));
-}
 
 function updateTripUI(data) {
   const headerTitle = document.querySelector("header h1");
@@ -535,6 +582,7 @@ function updateTripUI(data) {
       showDayContent(dayNumber);
     };
     dayButtonsContainer.appendChild(dayButton);
+
     const dayContent = document.createElement("div");
     dayContent.id = "day" + dayNumber + "-content";
     dayContent.className =
@@ -553,7 +601,7 @@ function updateTripUI(data) {
           time: eventData.time,
           title: eventData.title,
           location: eventData.location,
-          details: eventData.details, // details 그대로 전달
+          details: eventData.details,
         };
         const eventElem = createEventElement(dayNumber, eventObj);
         eventsContainer.appendChild(eventElem);
