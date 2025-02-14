@@ -4,15 +4,13 @@ const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-
 // null 값을 'null' 문자열로 변환하고, 값이 null인 키는 출력하지 않도록 처리
 function sanitizeObject(obj) {
   const sanitizedObj = {};
-
   Object.keys(obj).forEach((key) => {
     if (obj[key] === null) {
-      sanitizedObj[key] = "null"; // 값이 null이면 'null' 문자열로 처리
+      sanitizedObj[key] = "null";
     } else if (obj[key]) {
-      sanitizedObj[key] = obj[key]; // 값이 null이 아니면 그대로 저장
+      sanitizedObj[key] = obj[key];
     }
   });
-
   return sanitizedObj;
 }
 
@@ -21,9 +19,7 @@ async function fetchTouristData() {
 
   if (storedData) {
     console.log("📌 로컬 스토리지에서 데이터 로드");
-    const parsedData = JSON.parse(storedData);
-    console.log("📌 로컬 스토리지 데이터:", parsedData);
-    return parsedData;
+    return JSON.parse(storedData);
   }
 
   try {
@@ -37,12 +33,11 @@ async function fetchTouristData() {
             role: "user",
             parts: [
               {
-                text: `다음 정보를 JSON 형식으로 호텔, 식당, 관광지 각각 5개씩 총 15개를 반환해 주세요:
+                text: `다음 정보를 JSON 형식으로 반환해 주세요:
                 {
                     "hotels": [
                         {
                             "name": "이름",
-                            "category": "호텔",
                             "link": "웹사이트 URL",
                             "price": "1박 가격",
                             "address": "상세 주소",
@@ -57,7 +52,6 @@ async function fetchTouristData() {
                     "restaurants": [
                         {
                             "name": "이름",
-                            "category": "식당",
                             "link": "웹사이트 URL",
                             "price": "평균 가격",
                             "address": "상세 주소",
@@ -72,7 +66,6 @@ async function fetchTouristData() {
                     "touristSpots": [
                         {
                             "name": "이름",
-                            "category": "관광지",
                             "link": "웹사이트 URL",
                             "price": "입장료",
                             "address": "상세 주소",
@@ -100,7 +93,15 @@ async function fetchTouristData() {
     if (!rawData) throw new Error("No response from Gemini API");
 
     const parsedData = JSON.parse(rawData);
+
     console.log("✅ API 데이터 저장:", parsedData);
+
+    // ✅ **카테고리를 수작업으로 할당**
+    parsedData.hotels.forEach((hotel) => (hotel.category = "호텔"));
+    parsedData.restaurants.forEach(
+      (restaurant) => (restaurant.category = "식당")
+    );
+    parsedData.touristSpots.forEach((spot) => (spot.category = "관광지"));
 
     localStorage.setItem("touristData", JSON.stringify(parsedData));
     return parsedData;
@@ -114,7 +115,7 @@ async function updateContent(category) {
   const { hotels, restaurants, touristSpots } = await fetchTouristData();
   const dataMap = {
     호텔: hotels,
-    맛집: restaurants,
+    식당: restaurants,
     관광지: touristSpots,
   };
 
@@ -143,7 +144,7 @@ async function updateContent(category) {
           <h3 class="font-medium">${sanitizedPlace.name || "null"}</h3>
           <div class="text-sm text-gray-600">
               <i class="fas fa-clock text-blue-400"></i> ${
-                sanitizedPlace.hours || "운영 시간 없음"
+                sanitizedPlace.hours || "운영 시간 정보 없음"
               }
               <span class="ml-2 text-green-500">${
                 sanitizedPlace.price || "무료"
