@@ -110,7 +110,8 @@
             <div class="flex items-center justify-between mb-2" id="file-upload-area">
                 <span class="text-sm font-medium text-gray-700" id="file-info-text">파일 정보</span>
             </div>
-            <div class="space-y-2"></div> </div>
+            <div class="space-y-2"></div> 
+        </div>
         <button id="next-btn" class="w-full bg-custom text-white px-6 py-3 rounded-lg hover:bg-custom-dark transition-colors mt-6" disabled>
             <i class="fas fa-arrow-right mr-2"></i>다음으로
         </button>
@@ -118,6 +119,7 @@
 </div>
 </div>
 
+<!-- HTML 구조 (일정 불러오기와 직접 설정하기 버튼이 포함된 팝업) -->
 <div id="schedule-popup" class="fixed inset-0 z-50 hidden">
     <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
@@ -129,7 +131,7 @@
                     <div class="flex items-center justify-between mb-6 py-2">
                         <h3 class="text-2xl font-bold text-gray-900">일정 설정 방식 선택</h3>
                         <!-- 닫기 버튼 -->
-                        <button class="text-gray-500 hover:text-gray-700">
+                        <button class="text-gray-500 hover:text-gray-700" id="schedule-popup-btn">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
@@ -142,7 +144,17 @@
                             <i class="fas fa-list-ul text-2xl"></i>
                         </button>
                         
-                        <button class="w-full bg-gray-100 text-gray-900 px-6 py-4 rounded-lg flex items-center justify-between hover:bg-gray-200 transition-colors">
+                        <!-- 일정 목록을 표시할 새로운 영역 -->
+                        <div id="schedule-list-container" class="mt-4 hidden">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-2xl font-bold text-gray-900">저장된 일정 목록</h3>
+                                
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 h-64 overflow-y-auto" id="saved-schedule-list">
+                                <!-- 일정 목록이 여기에 동적으로 추가됨 -->
+                            </div> 
+                        </div>
+                        <button id="create-schedule-btn" class="w-full bg-gray-100 text-gray-900 px-6 py-4 rounded-lg flex items-center justify-between hover:bg-gray-200 transition-colors">
                             <div>
                                 <h4 class="text-lg font-bold">직접 일정 설정하기</h4>
                                 <p class="text-sm text-gray-600 text-left">새로운 일정을 직접 입력</p>
@@ -158,25 +170,20 @@
                                 <div class="flex justify-between items-center mb-6">
                                     <h3 class="text-2xl font-bold text-gray-900">저장된 일정 목록</h3>
                                 </div>
-                                <div class="space-y-4 overflow-y-auto max-h-[300px] pr-2 snap-y snap-mandatory">
-                                    <!-- 목록 버튼들 -->
-                                    <button class="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 border border-gray-200 snap-start">
-                                        <h4 class="text-lg font-semibold text-gray-900">도쿄 로컬 카페 탐방</h4>
-                                        <p class="text-sm text-gray-500">2024년 2월 15일</p>
-                                    </button>
-                                    <!-- 더 많은 일정들 -->
-                                </div>
+                                <div id="saved-schedule-container" class="overflow-x-auto whitespace-nowrap p-4">
+                                    <div id="saved-schedule-list" class="flex space-x-4">
+                                        <!-- 일정이 여기에 동적으로 추가됨 -->
+                                    </div>
+                                </div>                                
                                 
                                 <div id="schedule-detail" class="mt-6 border-t pt-6">
                                     <h4 class="text-xl font-bold text-gray-900 mb-4">선택된 일정</h4>
                                     <div class="bg-gray-50 p-4 rounded-lg">
-                                        <h5 class="text-lg font-semibold text-gray-900">도쿄 로컬 카페 탐방</h5>
-                                        <p class="text-sm text-gray-500 mt-1">2024년 2월 15일</p>
+                                        <h5 class="text-lg font-semibold text-gray-900" id="selected-schedule-title"></h5>
+                                        <p class="text-sm text-gray-500" id="selected-schedule-date"></p>
                                         <div class="mt-4">
-                                            <ul class="space-y-2 text-gray-600 text-sm">
-                                                <li>• 시부야 스타벅스 리저브</li>
-                                                <li>• 다이칸야마 츠타야 서점 카페</li>
-                                                <li>• 나카메구로 블루 보틀</li>
+                                            <ul class="space-y-2 text-gray-600 text-sm" id="selected-schedule-details">
+                                                <!-- 일정 세부 내용 -->
                                             </ul>
                                         </div>
                                     </div>
@@ -185,9 +192,10 @@
                         </div>
                     </div>
 
+                    <!-- 날짜 선택 바 (직접 일정 설정하기 클릭 시 보이도록 설정) -->
+                    <input type="date" id="schedule-date" class="w-full p-4 mt-6 rounded-lg hidden" />
                 </div>
             </div>
         </div>
     </div>
 </div>
-

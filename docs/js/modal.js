@@ -60,9 +60,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // 팝업 닫기 버튼
         if (target.id === 'close-ai-popup' || target.closest('#close-ai-popup')) {
-          selectedFiles = []; // selectedFiles 배열 초기화
-          imageUrls = [];
-          renderFileList(selectedFiles); // 파일 목록 다시 렌더링
+            selectedFiles = []; // selectedFiles 배열 초기화
+            imageUrls = [];
+            renderFileList(selectedFiles); // 파일 목록 다시 렌더링
             closeModal('ai-image-popup');
             closeModal('ai-image-modal');
             closeModal('popup-overlay');
@@ -99,22 +99,22 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if(target.id === 'next-btn') {
-          console.log("Next button clicked. selectedFiles:", selectedFiles);
-          convertFilesToBase64(selectedFiles);
-          if(level) {
-            closeModal('ai-image-popup');
-            closeModal('ai-image-modal');
-            openModal('popup-overlay');
-            openModal('write-form');
-          }
-          else {
-            closeModal('ai-image-popup');
-            closeModal('ai-image-modal');
-            openModal('schedule-popup');
-          }
+            console.log("Next button clicked. selectedFiles:", selectedFiles);
+            convertFilesToBase64(selectedFiles);
+            if(level) {
+                closeModal('ai-image-popup');
+                closeModal('ai-image-modal');
+                openModal('popup-overlay');
+                openModal('write-form');
+            }
+            else {
+                closeModal('ai-image-popup');
+                closeModal('ai-image-modal');
+                openModal('schedule-popup');
+            }
         }
 
-          if (target.id === 'close-user-popup') {
+        if (target.id === 'close-user-popup') {
             selectedFiles = []; // selectedFiles 배열 초기화
             imageUrls = [];
             renderFileList(selectedFiles); // 파일 목록 다시 렌더링
@@ -137,9 +137,22 @@ document.addEventListener('DOMContentLoaded', function () {
             renderFileList(selectedFiles); // 파일 목록 다시 렌더링
         }
 
-        if (target.id === 'schedule-list') {
+        if (target.id === 'schedule-list-btn') {
+            const scheduleListContainer = document.getElementById('schedule-list-container');
+            selectedFiles = [];
+            imageUrls = [];
+            renderFileList(selectedFiles);
+            if (scheduleListContainer) {
+                    scheduleListContainer.classList.remove('hidden'); // 숨김 해제
+                    displayEventSchedules(); // 일정 목록 렌더링
+                } else {
+                    console.error('schedule-list-container 요소를 찾을 수 없습니다.');
+                }
+            
+
 
         }
+        
         
         if (target.id === 'user-record-submit') {
             const title = document.querySelector('input[placeholder="여행 제목을 입력하세요"]').value;
@@ -162,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     };
 
                     // 로컬스토리지에 저장
-                    localStorage.setItem(id, JSON.stringify(travelRecord));
+                    localStorage.setItem("record-"+id, JSON.stringify(travelRecord));
 
                     console.log('Travel record saved to localStorage:', travelRecord);
                     // 폼 리셋
@@ -171,38 +184,40 @@ document.addEventListener('DOMContentLoaded', function () {
                     closeModal('popup-overlay');
                 }).catch((error) => {
                     console.error('파일 변환 중 오류 발생:', error);
-            });
-        } else {
-            console.error('선택된 파일이 없습니다.');
+                });
+            } else {
+                console.error('선택된 파일이 없습니다.');
+            }
         }
-                
-    }
+
+        // schedule-popup-btn 버튼 클릭 시
+        if (target.id === 'schedule-popup-btn' || target.closest('#schedule-popup-btn')) {
+            selectedFiles = [];
+            imageUrls = [];
+            renderFileList(selectedFiles);
+            closeModal('popup-overlay');
+            closeModal('schedule-popup');
+        }
     });
     
     // 저장된 모든 여행 기록 불러오기 (UUID 확인)
     function getAllTravelRecords() {
         const allRecords = [];
     
-        // 로컬스토리지에 저장된 모든 키를 확인
+        // 로컬 스토리지의 모든 키를 순회
         for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        
-        // UUID 형식인 키만 처리
-        if (isValidUUID(key)) {
-            const record = getTravelRecordByUUID(key);
-            if (record) {
-            allRecords.push(record);
+            const key = localStorage.key(i);
+    
+            // 키가 'event'로 시작하는지 확인
+            if (key.startsWith('event')) {
+                const record = JSON.parse(localStorage.getItem(key));
+                if (record) {
+                    allRecords.push(record);
+                }
             }
-        }
         }
     
         return allRecords;
-    }
-    
-    // UUID 형식 확인 (정규식을 사용한 간단한 체크)
-    function isValidUUID(key) {
-        const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        return regex.test(key);
     }
   
 
@@ -250,36 +265,58 @@ document.addEventListener('DOMContentLoaded', function () {
                 </button>
             `;
             fileList.appendChild(fileItem); // 새로운 파일 목록 추가
-
         });
     }
     
     // 파일을 base64로 변환하는 함수 (async/await 사용)
     async function convertFilesToBase64(files) {
-      imageUrls = []; // 이전 변환 결과를 초기화
+        imageUrls = []; // 이전 변환 결과를 초기화
 
-      // 비동기적으로 파일들을 base64로 변환
-      const filePromises = files.map(file => {
-          return new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              
-              reader.onload = function (event) {
-                  const base64String = event.target.result; // base64 문자열
-                  imageUrls.push(base64String); // base64 문자열을 배열에 저장
-                  console.log('Base64 Encoded:', base64String);
-                  resolve(); // 변환이 완료되면 resolve 호출
-              };
+        // 비동기적으로 파일을 base64로 변환
+        for (const file of files) {
+            try {
+                const base64String = await convertFileToBase64(file);
+                imageUrls.push(base64String);
+            } catch (error) {
+                console.error('파일을 base64로 변환하는 중 오류 발생:', error);
+            }
+        }
+    }
 
-              reader.onerror = function (error) {
-                  reject('Error encoding file to base64:', error);
-              };
+    // 파일을 base64로 변환하는 helper 함수
+    function convertFileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result); // 변환 성공 시
+            reader.onerror = (error) => reject(error); // 변환 오류 시
+            reader.readAsDataURL(file); // 파일을 base64로 읽기
+        });
+    }
 
-              reader.readAsDataURL(file); // 파일을 base64로 변환
-          });
-      });
-
-      // 모든 파일이 base64로 변환될 때까지 기다림
-      await Promise.all(filePromises);
-      console.log('All files are base64 encoded');
-  }
+    function displayEventSchedules() {
+        const scheduleList = document.getElementById('saved-schedule-list');
+        if (!scheduleList) {
+            console.error('saved-schedule-list 요소를 찾을 수 없습니다.');
+            return;
+        }
+    
+        const schedules = getAllTravelRecords();
+        console.log('불러온 일정:', schedules); // schedules 배열 확인
+    
+        if (schedules.length > 0) {
+            scheduleList.innerHTML = '';
+            schedules.forEach((schedule) => {
+                const scheduleItem = document.createElement('div');
+                scheduleItem.className = 'schedule-item p-4 border border-gray-200 rounded-lg';
+                scheduleItem.innerHTML = `
+                    <div class="text-lg font-semibold">${schedule.title}</div>
+                    <div class="text-sm text-gray-600">${schedule.startDate}</div>
+                `;
+                scheduleList.appendChild(scheduleItem);
+            });
+        } else {
+            scheduleList.innerHTML = '<div class="text-center py-4 text-gray-500">저장된 일정이 없습니다.</div>';
+        }
+    }
 });
+
