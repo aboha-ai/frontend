@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>성산일출봉</title>
+    <title>추천 여행지</title>
     <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&amp;display=swap"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
     <link
@@ -16,85 +16,18 @@
       href="https://ai-public.creatie.ai/gen_page/tailwind-custom.css"
       rel="stylesheet"
     />
-    <script src="https://cdn.tailwindcss.com/3.4.5?plugins=forms@0.5.7,typography@0.5.13,aspect-ratio@0.4.2,container-queries@0.1.1"></script>
-    <script
-      src="https://ai-public.creatie.ai/gen_page/tailwind-config.min.js"
-      data-color="#000000"
-      data-border-radius="small"
-    ></script>
+    <!-- Axios 라이브러리 포함 -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- 구글 맵 API 스크립트 추가 -->
+    <!-- 먼저 googleMap.js를 로드 (모듈로 로드) -->
+    <!-- <script type="module" src="assets/js/googleMap.js"></script> -->
+
     <script
       src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAb8P-xJKQkXwIMeA-MakTSMisMhDhcuNY&callback=initMap&libraries=places"
       async
       defer
     ></script>
-
-    <script>
-      let map, geocoder;
-
-      // 구글 맵 초기화 함수
-      function initMap() {
-        var mapOptions = {
-          center: { lat: 33.4596, lng: 126.9311 }, // 기본 위치 (성산일출봉)
-          zoom: 12, // 기본 확대 정도
-        };
-
-        map = new google.maps.Map(document.getElementById("map"), mapOptions);
-        geocoder = new google.maps.Geocoder();
-      }
-
-      const placesInfo = {
-        성산일출봉: {
-          photo:
-            "https://creatie.ai/ai/api/search-image?query=Seongsan Ilchulbong Peak at sunset with dramatic orange sky&width=300&height=300",
-          hours: "09:00 - 18:00",
-          price: "입장료: 2,000원",
-          description:
-            "성산일출봉은 제주도 동부에 위치한 유명한 자연경관입니다. 일출 명소로 유명합니다.",
-        },
-        설악산: {
-          photo:
-            "https://creatie.ai/ai/api/search-image?query=Seoraksan Mountain in autumn with vivid colors&width=300&height=300",
-          hours: "09:00 - 18:00",
-          price: "입장료: 무료",
-          description:
-            "설악산은 강원도에 위치한 아름다운 산으로, 다양한 하이킹 코스와 멋진 풍경을 자랑합니다.",
-        },
-      };
-
-      // 관광지 목록 클릭 시 해당 위치로 지도 이동 및 설명 표시
-      function onPlaceClick(place) {
-        // 지도 위치 변경
-        geocoder.geocode({ address: place }, function (results, status) {
-          if (status === "OK") {
-            const location = results[0].geometry.location;
-            map.setCenter(location);
-            map.setZoom(12);
-
-            // 마커 추가
-            new google.maps.Marker({
-              map: map,
-              position: location,
-              title: place,
-            });
-
-            // 우측 설명 창에 관광지 정보 업데이트
-            document.getElementById("place-photo").src =
-              placesInfo[place].photo;
-            document.getElementById(
-              "place-hours"
-            ).textContent = `영업시간: ${placesInfo[place].hours}`;
-            document.getElementById("place-price").textContent =
-              placesInfo[place].price || "가격 정보 없음";
-            document.getElementById("place-description").textContent =
-              placesInfo[place].description;
-          } else {
-            alert("위치를 찾을 수 없습니다: " + status);
-          }
-        });
-      }
-    </script>
   </head>
 
   <body class="font-sans bg-gray-50">
@@ -104,79 +37,60 @@
       <button class="text-2xl"><i class="fas fa-bars"></i></button>
       <div class="text-2xl font-bold">go</div>
       <img
-        src="https://creatie.ai/ai/api/search-image?query=A professional headshot of a person with a neutral expression against a light background&width=40&height=40&flag=59b92fdc-70b3-43f2-ba43-28b342fa34ed&flag=92aaf4aa-2f0c-4da2-8482-6599ca038741&flag=0c451a37-ac01-413c-bcaf-5c6fbda73c07"
+        src="https://creatie.ai/ai/api/search-image?query=A professional headshot of a person&width=40&height=40"
         class="w-10 h-10 rounded-full object-cover"
       />
     </header>
+
     <nav class="flex border-b border-gray-200">
-      <button class="px-6 py-3 bg-black text-white">전망</button>
-      <button class="px-6 py-3 text-gray-600">관광지</button>
-      <button class="px-6 py-3 text-gray-600">호텔</button>
+      <button
+        id="맛집-tab"
+        class="tab-button px-6 py-3 text-gray-600"
+        onclick="changeTab('맛집')"
+      >
+        맛집
+      </button>
+      <button
+        id="관광지-tab"
+        class="tab-button px-6 py-3 bg-black text-white"
+        onclick="changeTab('관광지')"
+      >
+        관광지
+      </button>
+      <button
+        id="호텔-tab"
+        class="tab-button px-6 py-3 text-gray-600"
+        onclick="changeTab('호텔')"
+      >
+        호텔
+      </button>
     </nav>
-    <div class="p-4 flex gap-2 overflow-x-auto">
-      <span class="px-4 py-2 bg-gray-100 rounded-full text-sm">인기</span>
-      <span class="px-4 py-2 bg-gray-100 rounded-full text-sm">우수식</span>
-      <span class="px-4 py-2 bg-gray-100 rounded-full text-sm">관광지</span>
-      <span class="px-4 py-2 bg-gray-100 rounded-full text-sm">#도시</span>
-      <span class="px-4 py-2 bg-gray-100 rounded-full text-sm">#한식</span>
-      <span class="px-4 py-2 bg-gray-100 rounded-full text-sm">#힐링</span>
-    </div>
+
     <main class="flex relative">
       <div
-        class="w-[30%] border-r border-gray-200 h-[calc(100vh-180px)] overflow-y-auto"
+        class="w-full sm:w-[30%] border-r border-gray-200 h-[calc(100vh-180px)] overflow-y-auto"
       >
-        <div class="p-4 border-b border-gray-200">
-          <div class="flex gap-4">
-            <img
-              src="https://creatie.ai/ai/api/search-image?query=Seongsan Ilchulbong Peak at sunset with dramatic orange sky&width=80&height=80&flag=27f40357-daac-4593-9216-32c780dac2e6&flag=6417cf25-162b-423f-9a2f-d8193e604504&flag=6d75e201-65cf-4ade-83d4-16ee07946b2a"
-              class="w-20 h-20 rounded-lg object-cover"
-            />
-            <div class="flex-1">
-              <h3 class="font-medium">성산일출봉</h3>
-              <div class="text-sm text-gray-600">
-                <i class="fas fa-star text-yellow-400"></i> 4.7
-                <span class="ml-2">조회 15,324</span>
-              </div>
-            </div>
-            <button
-              onclick="onPlaceClick('성산일출봉')"
-              class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
-            >
-              <i class="fas fa-map-marker-alt"></i>
-            </button>
-          </div>
-        </div>
-        <div class="p-4 border-b border-gray-200">
-          <div class="flex gap-4">
-            <img
-              src="https://creatie.ai/ai/api/search-image?query=Seoraksan Mountain in autumn with vivid colors&width=80&height=80&flag=27f40357-daac-4593-9216-32c780dac2e6&flag=6417cf25-162b-423f-9a2f-d8193e604504&flag=6d75e201-65cf-4ade-83d4-16ee07946b2a"
-              class="w-20 h-20 rounded-lg object-cover"
-            />
-            <div class="flex-1">
-              <h3 class="font-medium">설악산</h3>
-              <div class="text-sm text-gray-600">
-                <i class="fas fa-star text-yellow-400"></i> 4.8
-                <span class="ml-2">조회 20,234</span>
-              </div>
-            </div>
-            <button
-              onclick="onPlaceClick('설악산')"
-              class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
-            >
-              <i class="fas fa-map-marker-alt"></i>
-            </button>
-          </div>
-        </div>
+        <div
+          id="맛집-content"
+          class="content-section p-4 border-b border-gray-200"
+        ></div>
+        <div
+          id="관광지-content"
+          class="content-section p-4 border-b border-gray-200"
+        ></div>
+        <div
+          id="호텔-content"
+          class="content-section p-4 border-b border-gray-200"
+        ></div>
       </div>
 
-      <!-- 구글 맵이 들어갈 위치 (map-id로 지정) -->
+      <!-- ✅ Google Maps 영역 -->
       <div
         id="map"
-        class="w-[70%] h-[calc(100vh-60px)] top-0 left-0 z-10"
+        class="w-full sm:w-[70%] h-[calc(100vh-60px)] top-0 left-0 z-10"
       ></div>
 
-      <!-- 관광지 정보 표시 영역 -->
-      <div class="w-[30%] p-4">
+      <div class="w-full sm:w-[30%] p-4">
         <h3 class="text-xl font-bold mb-4" id="place-name">관광지 설명</h3>
         <img
           id="place-photo"
@@ -187,6 +101,7 @@
         <p id="place-description" class="text-sm text-gray-600"></p>
       </div>
     </main>
+
     <footer class="bg-white mt-12">
       <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="text-center text-gray-500 text-sm">
@@ -194,5 +109,17 @@
         </div>
       </div>
     </footer>
+
+    <!-- 팝업을 위한 div -->
+    <div id="modal" class="modal hidden">
+      <div class="modal-content">
+        <span id="close-btn" class="close-btn">&times;</span>
+        <h2 id="popup-title"></h2>
+        <p id="popup-description"></p>
+      </div>
+    </div>
+
+    <script src="assets/js/googleMap.js"></script>
+    <script src="assets/js/api.js"></script>
   </body>
 </html>
