@@ -1,4 +1,4 @@
-// app.js - 최종 개선 코드 (상세 내용 pre-fill 및 메모 구획 분리)
+// app.js - 최종 개선 코드 (여행 개요 수정 포함)
 
 let currentDay = 1;
 let totalDays = 1; // 초기 Day 수
@@ -6,6 +6,7 @@ let currentEventEditing = null;
 // temp api key
 const GOOGLE_MAP_API = "your_key";
 const WEATHER_API_KEY = "6JMUS56QRRG2LJMKYWKXTPH7Y";
+const accessKey = "jKmpPpL00k6bhiDWQzwXElaHu9DZpB9FjYwqT00yC7I";
 
 // "HH:MM" 형식을 분 단위로 변환하는 유틸리티 함수
 function getTimeInMinutes(timeStr) {
@@ -287,12 +288,11 @@ function sortEvents(dayNumber) {
 // Add/Edit Event 모달 열기
 function openEventModal(mode, eventId = null) {
   const modal = document.getElementById("add-event-modal");
-  // 상세 내용 수정 방지를 위해 모달에서는 "event-description" 필드를 readOnly 처리
+  // "event-description" 필드를 readOnly 처리하여 preset 수정은 불가
   document.getElementById("event-description").readOnly = true;
   if (mode === "add") {
     document.getElementById("event-modal-title").innerText = "Add New Event";
     document.getElementById("event-id").value = "";
-    // 폼 초기화 – readOnly 필드도 초기화
     document.getElementById("event-form").reset();
   } else if (mode === "edit" && eventId) {
     document.getElementById("event-modal-title").innerText = "Edit Event";
@@ -301,7 +301,6 @@ function openEventModal(mode, eventId = null) {
     const title = eventElem.querySelector("h3").innerText;
     const time = eventElem.getAttribute("data-time");
     const location = eventElem.querySelector("p.text-gray-600.mb-4").innerText;
-    // preset 상세 내용: 우선 <ul> 내부의 내용을 사용. 없으면 <p> 사용.
     let description = "";
     const presetElem = eventElem.querySelector('div[id$="-details"] ul');
     if (presetElem) {
@@ -310,7 +309,6 @@ function openEventModal(mode, eventId = null) {
       const pElem = eventElem.querySelector('div[id$="-details"] p');
       description = pElem ? pElem.innerText : "";
     }
-    // memo 값 추출: 모든 <p> 중 "메모:"로 시작하는 항목
     let memo = "";
     const detailContainer = eventElem.querySelector('div[id$="-details"]');
     if (detailContainer) {
@@ -344,11 +342,8 @@ function eventModalSubmit(e) {
   const title = document.getElementById("event-title").value;
   const time = document.getElementById("event-time").value;
   const location = document.getElementById("event-location").value;
-  // readOnly 필드이므로 modal의 description 값이 변경되지 않음. 만약 빈 문자열이면 기존 preset을 유지.
   let description = document.getElementById("event-description").value;
-  const memo = document.getElementById("event-memo").value; // 메모 값 읽기
-
-  // 편집 모드이면, 만약 description이 빈 문자열이라면 기존 preset 값을 보존
+  const memo = document.getElementById("event-memo").value;
   if (eventId) {
     const dayData = window.tripData.itinerary.find(
       (day) => day.day === currentDay
@@ -364,16 +359,14 @@ function eventModalSubmit(e) {
       }
     }
   }
-
   const eventData = {
     id: eventId || "event-" + Date.now() + Math.floor(Math.random() * 1000),
     title,
     time,
     location,
-    description, // preset 상세 내용 보존
-    memo, // 메모 추가
+    description,
+    memo,
   };
-
   let eventsContainer = document.getElementById(
     "day" + currentDay + "-events-container"
   );
@@ -385,7 +378,6 @@ function eventModalSubmit(e) {
     eventsContainer.id = "day" + currentDay + "-events-container";
     dayContent.appendChild(eventsContainer);
   }
-
   let dayData = window.tripData.itinerary.find((day) => day.day === currentDay);
   if (!dayData) {
     dayData = {
@@ -395,7 +387,6 @@ function eventModalSubmit(e) {
     };
     window.tripData.itinerary.push(dayData);
   }
-
   if (eventId) {
     const existingEventIndex = dayData.events.findIndex(
       (e) => e.id === eventId
@@ -420,7 +411,6 @@ function eventModalSubmit(e) {
     "이벤트 추가/수정 후 localStorage:",
     localStorage.getItem("tripData")
   );
-
   document.getElementById("event-id").value = "";
   document.getElementById("event-form").reset();
   document.getElementById("add-event-modal").classList.add("hidden");
@@ -438,7 +428,6 @@ function openDeleteEventModal(eventId, eventTitle) {
 function confirmDeleteEvent() {
   const modal = document.getElementById("delete-event-modal");
   const eventId = modal.getAttribute("data-event-id");
-
   if (window.tripData) {
     const currentDayData = window.tripData.itinerary.find(
       (day) => day.day === currentDay
@@ -449,10 +438,8 @@ function confirmDeleteEvent() {
       );
     }
   }
-
   const eventElem = document.getElementById(eventId);
   if (eventElem) eventElem.remove();
-
   const eventsContainer = document.getElementById(
     "day" + currentDay + "-events-container"
   );
@@ -463,7 +450,6 @@ function confirmDeleteEvent() {
     eventsContainer.innerHTML = "";
     eventsContainer.appendChild(createEmptyMessage(currentDay));
   }
-
   updateLocalStorage();
   console.log("이벤트 삭제 후 localStorage:", localStorage.getItem("tripData"));
   modal.classList.add("hidden");
@@ -477,7 +463,6 @@ function updateTripOverview(data) {
   const options = { month: "short", day: "numeric", year: "numeric" };
   let startStr = startDate.toLocaleDateString("en-US", options);
   let endStr = endDate.toLocaleDateString("en-US", options);
-
   const overviewContainer = document.querySelector(
     ".bg-white.rounded-lg.shadow-sm.p-6.mb-6"
   );
@@ -501,6 +486,46 @@ function updateTripOverview(data) {
       }
     }
   }
+  const headerRoute = document.getElementById("header-route");
+  if (headerRoute && data.location && data.location.address) {
+    headerRoute.innerText = data.location.address;
+  }
+  updateBackgroundImage(
+    data.location.city || data.location.address || "Travel"
+  );
+}
+
+// Unsplash API를 활용해 여행지 기반 백그라운드 이미지 가져오기 + 캐싱
+function updateBackgroundImage(travelLocation) {
+  const cacheKey = "backgroundImage_" + travelLocation;
+  const cachedImage = localStorage.getItem(cacheKey);
+  if (cachedImage) {
+    setHeaderBackground(cachedImage);
+  } else {
+    const apiUrl = `https://api.unsplash.com/photos/random?query=${encodeURIComponent(
+      travelLocation
+    )}&orientation=landscape&client_id=${accessKey}`;
+    fetch(apiUrl)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data && data.urls && data.urls.regular) {
+          setHeaderBackground(data.urls.regular);
+          localStorage.setItem(cacheKey, data.urls.regular);
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching background image:", error);
+      });
+  }
+}
+
+function setHeaderBackground(imageUrl) {
+  const header = document.querySelector("header");
+  if (header) {
+    header.style.backgroundImage = `url(${imageUrl})`;
+    header.style.backgroundSize = "cover";
+    header.style.backgroundPosition = "center";
+  }
 }
 
 // 날씨 정보 받아오기
@@ -511,17 +536,14 @@ function updateWeatherForecast(data) {
   const endDate = new Date(today);
   endDate.setDate(endDate.getDate() + 2);
   const endDateStr = endDate.toISOString().split("T")[0];
-
   const weatherApiUrl = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(
     tripLocation
   )}/${startDate}/${endDateStr}?unitGroup=metric&lang=ko&key=${WEATHER_API_KEY}&contentType=json`;
-
   fetch(weatherApiUrl)
     .then((response) => response.json())
     .then((weatherData) => {
       const forecastContainer = document.querySelector(".weather-forecast");
       if (!forecastContainer) return;
-
       forecastContainer.innerHTML = `<div class="text-lg font-medium mb-2">${tripLocation} 날씨</div>`;
       weatherData.days.forEach((day) => {
         const date = new Date(day.datetime);
@@ -552,11 +574,80 @@ function updateLocalStorage() {
   }
 }
 
+// 타이틀 변경 (헤더 h1 편집)
+function enableEditableTitle() {
+  const headerTitle = document.querySelector("header h1");
+  if (headerTitle) {
+    headerTitle.contentEditable = "true";
+    headerTitle.style.cursor = "text";
+    headerTitle.addEventListener("blur", function () {
+      if (window.tripData) {
+        window.tripData.title = headerTitle.innerText;
+        updateLocalStorage();
+      }
+    });
+  }
+}
+
+// 여행 개요 수정 모달 열기 함수
+function openOverviewModal() {
+  const modal = document.getElementById("overview-modal");
+  if (!modal) return;
+  if (
+    window.tripData &&
+    window.tripData.location &&
+    window.tripData.location.arrival_time
+  ) {
+    document.getElementById("overview-start-date").value =
+      window.tripData.location.arrival_time.split("T")[0];
+  }
+  if (window.tripData && window.tripData.location) {
+    document.getElementById("overview-location").value =
+      window.tripData.location.address;
+  }
+  document.getElementById("overview-travelers").value =
+    window.tripData.travelers || "1";
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+}
+
+// 여행 개요 수정 모달 닫기 함수
+function closeOverviewModal() {
+  const modal = document.getElementById("overview-modal");
+  if (!modal) return;
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+
+// 여행 개요 모달 제출 처리
+function overviewModalSubmit(e) {
+  e.preventDefault();
+  const startDate = document.getElementById("overview-start-date").value;
+  const location = document.getElementById("overview-location").value;
+  const travelers = document.getElementById("overview-travelers").value;
+  if (window.tripData && window.tripData.location) {
+    window.tripData.location.arrival_time = startDate + "T00:00:00";
+    window.tripData.location.address = location;
+  }
+  window.tripData.travelers = travelers;
+  updateLocalStorage();
+  updateTripUI(window.tripData);
+  closeOverviewModal();
+}
+
+// 여행 개요 수정 모달을 "trip-overview" 영역 클릭 시 열도록 설정
+function enableEditableOverview() {
+  const overviewEl = document.getElementById("trip-overview");
+  if (overviewEl) {
+    overviewEl.style.cursor = "pointer";
+    overviewEl.addEventListener("click", openOverviewModal);
+  }
+}
+
 // DOMContentLoaded – 로컬스토리지에서 데이터 불러오기 및 id 자동 할당
 document.addEventListener("DOMContentLoaded", function () {
   updateDayNumbers();
   showDayContent(1);
-
   let timeInput = document.getElementById("event-time");
   if (timeInput) {
     timeInput.addEventListener("focus", function () {
@@ -570,7 +661,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   }
-
   const localData = localStorage.getItem("tripData");
   if (localData) {
     try {
@@ -587,12 +677,31 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   updateDayNumbers();
   showDayContent(1);
+  enableEditableTitle();
+  enableEditableOverview();
 });
 
+// updateTripUI 함수 – 여행 개요 및 일정, 날씨, 백그라운드 이미지 업데이트
 function updateTripUI(data) {
   const headerTitle = document.querySelector("header h1");
   if (headerTitle && data.title) {
     headerTitle.innerText = data.title;
+  }
+  // 여행 개요 영역 업데이트 (여행 기간, 출발 장소, 여행 인원)
+  const overviewEl = document.getElementById("trip-overview");
+  if (overviewEl && data.location) {
+    const durationEl = overviewEl.querySelector("#trip-duration");
+    if (durationEl) {
+      durationEl.innerText = `${totalDays} Days`;
+    }
+    const startingPointEl = overviewEl.querySelector("#starting-point");
+    if (startingPointEl) {
+      startingPointEl.innerText = data.location.address;
+    }
+    const travelersEl = overviewEl.querySelector("#trip-travelers");
+    if (travelersEl) {
+      travelersEl.innerText = data.travelers ? `${data.travelers}명` : "1명";
+    }
   }
   const overviewElems = document.querySelectorAll(".fa-map-marker-alt");
   overviewElems.forEach((el) => {
@@ -607,7 +716,6 @@ function updateTripUI(data) {
   );
   dayButtonsContainer.innerHTML = "";
   dayContentsContainer.innerHTML = "";
-
   data.itinerary.forEach((dayData, index) => {
     const dayNumber = index + 1;
     const dayButton = document.createElement("button");
@@ -622,7 +730,6 @@ function updateTripUI(data) {
       showDayContent(dayNumber);
     };
     dayButtonsContainer.appendChild(dayButton);
-
     const dayContent = document.createElement("div");
     dayContent.id = "day" + dayNumber + "-content";
     dayContent.className =
@@ -653,7 +760,6 @@ function updateTripUI(data) {
     dayContent.appendChild(eventsContainer);
     dayContentsContainer.appendChild(dayContent);
   });
-
   const moreButton = document.createElement("button");
   moreButton.className =
     "px-4 py-2 text-gray-600 hover:bg-gray-100 !rounded-button";
@@ -665,4 +771,5 @@ function updateTripUI(data) {
   window.tripData = data;
   updateTripOverview(data);
   updateWeatherForecast(data);
+  enableEditableOverview();
 }
