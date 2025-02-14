@@ -33,7 +33,7 @@ async function fetchTouristData() {
             role: "user",
             parts: [
               {
-                text: `현지인이 자주가고 풍경위주의 평화로운 여행을 원하는 사람이 갈만한 "country" 의 "city" 에 있는 "hotel", "restaurants", "touristSpot"를 JSON 형식으로 각각 5개씩 총 15개를 반환해 주세요:
+                text: `현지인이 자주 가고 풍경 위주의 평화로운 여행을 원하는 사람이 갈만한 "country" 의 "city" 에 있는 "hotel", "restaurants", "touristSpot"를 JSON 형식으로 각각 5개씩 총 15개를 반환해 주세요:
                 {
                     "hotels": [
                         {

@@ -1,4 +1,5 @@
 let map;
+let currentMarker = null; // 현재 표시된 마커를 저장할 변수
 
 // Google Map 초기화
 function initMap() {
@@ -15,8 +16,13 @@ window.showLocation = function (location, name) {
     return;
   }
 
-  // 기존 마커 제거
-  const marker = new google.maps.Marker({
+  // 기존 마커가 있다면 삭제
+  if (currentMarker) {
+    currentMarker.setMap(null);
+  }
+
+  // 새 마커 생성
+  currentMarker = new google.maps.Marker({
     position: location,
     map: map,
     animation: google.maps.Animation.DROP,
@@ -44,8 +50,8 @@ window.showLocation = function (location, name) {
       });
 
       // 마커 클릭 시 정보 창을 표시하도록 설정
-      marker.addListener("click", function () {
-        infoWindow.open(map, marker);
+      currentMarker.addListener("click", function () {
+        infoWindow.open(map, currentMarker);
       });
     } else {
       console.error("❌ 구글 장소 검색 실패:", status);
