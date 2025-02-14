@@ -1,4 +1,4 @@
-// app.js - 최종 개선 코드 (자동 id 부여 포함)
+// app.js - 최종 개선 코드 (상세 내용 pre-fill 및 메모 구획 분리)
 
 let currentDay = 1;
 let totalDays = 1; // 초기 Day 수
@@ -13,12 +13,11 @@ function getTimeInMinutes(timeStr) {
   return parseInt(parts[0]) * 60 + parseInt(parts[1]);
 }
 
-// id가 없으면 고유 id를 부여하는 함수
+// id가 없는 경우 고유 id를 부여하는 함수
 function assignUniqueIds(data) {
   data.itinerary.forEach((day) => {
     day.events.forEach((event, index) => {
       if (!event.id) {
-        // 기존 이벤트가 여러 개일 수 있으므로 day와 index 정보를 활용
         event.id = `event-${day.day}-${index}-${Date.now()}-${Math.floor(
           Math.random() * 1000
         )}`;
@@ -121,7 +120,6 @@ function addDay() {
 
   document.getElementById("day-contents-container").appendChild(dayContent);
 
-  // tripData 업데이트 후 즉시 저장
   if (window.tripData) {
     window.tripData.itinerary.push({
       day: newDayNumber,
@@ -143,7 +141,7 @@ function openDeleteDayModal() {
   document.getElementById("delete-day-modal").classList.add("flex");
 }
 
-// Delete Day 모달 확인 시 현재 Day 삭제 (개선된 코드)
+// Delete Day 모달 확인 시 현재 Day 삭제
 function confirmDeleteDay() {
   const btnToRemove = document.getElementById("day-btn-" + currentDay);
   const contentToRemove = document.getElementById(
@@ -153,7 +151,6 @@ function confirmDeleteDay() {
   if (contentToRemove) contentToRemove.remove();
 
   if (window.tripData) {
-    // 현재 삭제 대상 Day 제거 및 남은 일정의 day 번호 재할당
     window.tripData.itinerary = window.tripData.itinerary.filter(
       (day) => day.day !== currentDay
     );
@@ -175,9 +172,8 @@ function confirmDeleteDay() {
   document.getElementById("delete-day-modal").classList.add("hidden");
 }
 
-// 이벤트 카드 생성 함수
+// 이벤트 카드 생성 함수 – preset 상세 내용과 메모를 별도 구획으로 표시
 function createEventElement(dayNumber, eventData) {
-  // id가 없는 경우 자동 할당
   const eventId =
     eventData.id || "event-" + Date.now() + Math.floor(Math.random() * 1000);
   eventData.id = eventId;
@@ -186,9 +182,9 @@ function createEventElement(dayNumber, eventData) {
   container.setAttribute("data-time", eventData.time);
   container.id = eventId;
 
-  let detailsHtml = "";
+  let presetHtml = "";
   if (eventData.details) {
-    detailsHtml = `<ul class="text-gray-600 list-disc pl-5">
+    presetHtml = `<ul class="text-gray-600 list-disc pl-5">
           ${
             eventData.details.open_time
               ? `<li>운영시간: ${eventData.details.open_time}</li>`
@@ -207,7 +203,14 @@ function createEventElement(dayNumber, eventData) {
           }
         </ul>`;
   } else {
-    detailsHtml = `<p class="text-gray-600">${eventData.description || ""}</p>`;
+    presetHtml = `<p class="text-gray-600">${eventData.description || ""}</p>`;
+  }
+
+  let memoHtml = "";
+  if (eventData.memo) {
+    memoHtml = `<div class="memo-section mt-2 p-2 border-t border-gray-300">
+                  <strong>메모:</strong> ${eventData.memo}
+                </div>`;
   }
 
   container.innerHTML = `
@@ -243,7 +246,8 @@ function createEventElement(dayNumber, eventData) {
           <div id="${eventId}-details" class="hidden transition-all duration-300 mt-4 p-4 bg-white rounded shadow">
             <div class="grid grid-cols-2 gap-4">
               <div>
-                ${detailsHtml}
+                ${presetHtml}
+                ${memoHtml}
               </div>
               <div>
                 ${/* 지도 iframe 부분 주석 처리 */ ""}
@@ -283,9 +287,12 @@ function sortEvents(dayNumber) {
 // Add/Edit Event 모달 열기
 function openEventModal(mode, eventId = null) {
   const modal = document.getElementById("add-event-modal");
+  // 상세 내용 수정 방지를 위해 모달에서는 "event-description" 필드를 readOnly 처리
+  document.getElementById("event-description").readOnly = true;
   if (mode === "add") {
     document.getElementById("event-modal-title").innerText = "Add New Event";
     document.getElementById("event-id").value = "";
+    // 폼 초기화 – readOnly 필드도 초기화
     document.getElementById("event-form").reset();
   } else if (mode === "edit" && eventId) {
     document.getElementById("event-modal-title").innerText = "Edit Event";
@@ -294,13 +301,32 @@ function openEventModal(mode, eventId = null) {
     const title = eventElem.querySelector("h3").innerText;
     const time = eventElem.getAttribute("data-time");
     const location = eventElem.querySelector("p.text-gray-600.mb-4").innerText;
-    const descriptionElem = eventElem.querySelector('div[id$="-details"] p');
-    const description = descriptionElem ? descriptionElem.innerText : "";
+    // preset 상세 내용: 우선 <ul> 내부의 내용을 사용. 없으면 <p> 사용.
+    let description = "";
+    const presetElem = eventElem.querySelector('div[id$="-details"] ul');
+    if (presetElem) {
+      description = presetElem.innerText;
+    } else {
+      const pElem = eventElem.querySelector('div[id$="-details"] p');
+      description = pElem ? pElem.innerText : "";
+    }
+    // memo 값 추출: 모든 <p> 중 "메모:"로 시작하는 항목
+    let memo = "";
+    const detailContainer = eventElem.querySelector('div[id$="-details"]');
+    if (detailContainer) {
+      const pElements = detailContainer.querySelectorAll("p.text-gray-600");
+      pElements.forEach((p) => {
+        if (p.innerText.trim().startsWith("메모:")) {
+          memo = p.innerText.replace("메모:", "").trim();
+        }
+      });
+    }
     document.getElementById("event-id").value = eventId;
     document.getElementById("event-title").value = title;
     document.getElementById("event-time").value = time;
     document.getElementById("event-location").value = location;
     document.getElementById("event-description").value = description;
+    document.getElementById("event-memo").value = memo;
   }
   modal.classList.remove("hidden");
   modal.classList.add("flex");
@@ -318,14 +344,34 @@ function eventModalSubmit(e) {
   const title = document.getElementById("event-title").value;
   const time = document.getElementById("event-time").value;
   const location = document.getElementById("event-location").value;
-  const description = document.getElementById("event-description").value;
+  // readOnly 필드이므로 modal의 description 값이 변경되지 않음. 만약 빈 문자열이면 기존 preset을 유지.
+  let description = document.getElementById("event-description").value;
+  const memo = document.getElementById("event-memo").value; // 메모 값 읽기
+
+  // 편집 모드이면, 만약 description이 빈 문자열이라면 기존 preset 값을 보존
+  if (eventId) {
+    const dayData = window.tripData.itinerary.find(
+      (day) => day.day === currentDay
+    );
+    if (dayData) {
+      const existingEvent = dayData.events.find((e) => e.id === eventId);
+      if (
+        existingEvent &&
+        existingEvent.description &&
+        description.trim() === ""
+      ) {
+        description = existingEvent.description;
+      }
+    }
+  }
 
   const eventData = {
     id: eventId || "event-" + Date.now() + Math.floor(Math.random() * 1000),
     title,
     time,
     location,
-    description,
+    description, // preset 상세 내용 보존
+    memo, // 메모 추가
   };
 
   let eventsContainer = document.getElementById(
@@ -340,7 +386,6 @@ function eventModalSubmit(e) {
     dayContent.appendChild(eventsContainer);
   }
 
-  // currentDay에 해당하는 day 데이터 찾기
   let dayData = window.tripData.itinerary.find((day) => day.day === currentDay);
   if (!dayData) {
     dayData = {
@@ -351,7 +396,6 @@ function eventModalSubmit(e) {
     window.tripData.itinerary.push(dayData);
   }
 
-  // 수정 모드: 기존 이벤트 교체
   if (eventId) {
     const existingEventIndex = dayData.events.findIndex(
       (e) => e.id === eventId
@@ -364,11 +408,9 @@ function eventModalSubmit(e) {
       eventElem.replaceWith(createEventElement(currentDay, eventData));
     }
   } else {
-    // 추가 모드: 새 이벤트 추가
     dayData.events.push(eventData);
     eventsContainer.appendChild(createEventElement(currentDay, eventData));
   }
-  // events 배열 자체를 시간순 정렬한 후 즉시 저장
   dayData.events.sort(
     (a, b) => getTimeInMinutes(a.time) - getTimeInMinutes(b.time)
   );
@@ -510,12 +552,11 @@ function updateLocalStorage() {
   }
 }
 
-// DOMContentLoaded를 하나의 이벤트 리스너로 통합 (로컬스토리지에서 즉시 데이터 불러오기)
+// DOMContentLoaded – 로컬스토리지에서 데이터 불러오기 및 id 자동 할당
 document.addEventListener("DOMContentLoaded", function () {
   updateDayNumbers();
   showDayContent(1);
 
-  // 시간 입력: 24시간제 강제 (Safari 대응)
   let timeInput = document.getElementById("event-time");
   if (timeInput) {
     timeInput.addEventListener("focus", function () {
@@ -530,7 +571,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // 로컬스토리지에서 데이터 불러오기 및 id 자동 할당
   const localData = localStorage.getItem("tripData");
   if (localData) {
     try {
@@ -602,6 +642,7 @@ function updateTripUI(data) {
           title: eventData.title,
           location: eventData.location,
           details: eventData.details,
+          memo: eventData.memo || "",
         };
         const eventElem = createEventElement(dayNumber, eventObj);
         eventsContainer.appendChild(eventElem);
