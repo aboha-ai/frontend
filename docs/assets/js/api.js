@@ -1,5 +1,7 @@
+const GEO_API_KEY = "AIzaSyAuQhWQkZgxQeWiDVO0aklq91W00amtJUI"; // Geocoding API 키
 const API_KEY = "AIzaSyBQ6n3ZpaQ8ocsvrog1CqgZBJW1ilgj5Lg";
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+const GEO_API_URL = "https://maps.googleapis.com/maps/api/geocode/json"; // Geocoding API URL
 
 // null 값을 'null' 문자열로 변환하고, 값이 null인 키는 출력하지 않도록 처리
 function sanitizeObject(obj) {
@@ -12,6 +14,26 @@ function sanitizeObject(obj) {
     }
   });
   return sanitizedObj;
+}
+
+// Geocoding API를 사용해 장소 이름으로 위도/경도 가져오기
+async function fetchGeolocationFromName(name) {
+  console.log("📌 Geocoding API에 전달된 장소 이름:", name); // 전달된 name 값 확인
+
+  const geocodingAPIUrl = `${GEO_API_URL}?address=${encodeURIComponent(
+    name
+  )}&key=${GEO_API_KEY}`;
+  const response = await fetch(geocodingAPIUrl);
+  const data = await response.json();
+  console.log("📌 Geocoding API 응답:", data); // 응답 내용 확인
+
+  if (data.status === "OK") {
+    const location = data.results[0].geometry.location;
+    return { lat: location.lat, lng: location.lng };
+  } else {
+    console.error(`❌ Geocoding API 오류: ${data.status}`);
+    throw new Error("장소를 찾을 수 없습니다.");
+  }
 }
 
 async function fetchTouristData() {
@@ -45,8 +67,7 @@ async function fetchTouristData() {
                             "city": "도시",
                             "description": "설명",
                             "hours": "체크인/체크아웃 시간",
-                            "photoUrl": "이미지 URL",
-                            "location": {"lat": 위도, "lng": 경도}
+                            "photoUrl": "이미지 URL"
                         }
                     ],
                     "restaurants": [
@@ -59,8 +80,7 @@ async function fetchTouristData() {
                             "city": "도시",
                             "description": "설명",
                             "hours": "운영 시간",
-                            "photoUrl": "이미지 URL",
-                            "location": {"lat": 위도, "lng": 경도}
+                            "photoUrl": "이미지 URL"
                         }
                     ],
                     "touristSpots": [
@@ -73,8 +93,7 @@ async function fetchTouristData() {
                             "city": "도시",
                             "description": "설명",
                             "hours": "운영 시간",
-                            "photoUrl": "이미지 URL",
-                            "location": {"lat": 위도, "lng": 경도}
+                            "photoUrl": "이미지 URL"
                         }
                     ]
                 }`,
@@ -125,7 +144,8 @@ async function updateContent(category) {
   contentContainer.innerHTML = ""; // 기존 내용 초기화
 
   dataMap[category].forEach((place) => {
-    console.log(`📌 ${category} 장소:`, place);
+    console.log(`📌 ${category} 장소:`, place); // 장소 객체 전체 출력
+    console.log(`📌 장소 이름: ${place.name}`); // 이름만 출력
 
     // sanitize the place object to handle null values
     const sanitizedPlace = sanitizeObject(place);
@@ -151,9 +171,7 @@ async function updateContent(category) {
               }</span>
           </div>
       </div>
-      <button onclick='showLocation(${JSON.stringify(
-        sanitizedPlace.location
-      )})' 
+      <button onclick='handleMarkerClick("${sanitizedPlace.name}")' 
               class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
           <i class="fas fa-map-marker-alt"></i>
       </button>
@@ -163,14 +181,50 @@ async function updateContent(category) {
   });
 }
 
+async function handleMarkerClick(name) {
+  console.log("📌 클릭된 장소 이름:", name); // name 값 확인
+
+  try {
+    const location = await fetchGeolocationFromName(name);
+    console.log("📌 위치 정보:", location);
+
+    if (window.initMap) {
+      initMap(location); // 위치 정보를 initMap 함수로 전달
+    } else {
+      console.error("❌ initMap 함수가 정의되지 않았습니다.");
+    }
+  } catch (error) {
+    console.error("❌ 위치를 찾을 수 없습니다:", error);
+    alert("위치를 찾을 수 없습니다. 장소 이름을 다시 확인해 주세요.");
+  }
+}
+
+// initMap 함수 구현: 구글 맵을 초기화하고, 마커를 지도에 추가하는 기능을 담당
+function initMap(location) {
+  // 지도 초기화: 지도 중심을 전달된 위치로 설정
+  const map = new google.maps.Map(document.getElementById("map"), {
+    center: location,
+    zoom: 14,
+  });
+
+  // 마커 생성: 클릭한 장소의 위치에 마커를 추가
+  const marker = new google.maps.Marker({
+    position: location,
+    map: map,
+    title: "클릭된 장소",
+  });
+
+  // 마커 클릭 시 상세 정보 표시할 수 있게 추가
+  const infoWindow = new google.maps.InfoWindow({
+    content: `<h4>${marker.title}</h4>`,
+  });
+
+  marker.addListener("click", function () {
+    infoWindow.open(map, marker);
+  });
+}
+
 window.onload = async () => {
   // 1. 먼저 관광지 데이터를 로드
   await updateContent("관광지");
-
-  // 2. Google Maps API에서 initMap 호출
-  if (window.initMap) {
-    initMap();
-  } else {
-    console.error("❌ initMap 함수가 정의되지 않았습니다.");
-  }
 };
