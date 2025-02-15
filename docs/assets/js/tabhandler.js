@@ -19,14 +19,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // 선택한 콘텐츠 표시
-    document.getElementById(`${tabName}-content`).style.display = "block";
+    const contentElement = document.getElementById(`${tabName}-content`);
+    if (contentElement) {
+      contentElement.style.display = "block";
+    }
 
     // 해당 탭의 데이터 불러오기
     updateContent(tabName);
   }
-
-  // 기본으로 관광지 탭 활성화
-  changeTab("관광지");
 
   // 글로벌 함수 등록 (HTML에서 호출 가능하도록)
   window.changeTab = changeTab;

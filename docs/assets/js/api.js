@@ -55,7 +55,7 @@ async function fetchTouristData() {
             role: "user",
             parts: [
               {
-                text: `현지인이 자주 가고 풍경 위주의 평화로운 여행을 원하는 사람이 갈만한 "country" 의 "city" 에 있는 "hotel", "restaurants", "touristSpot"를 JSON 형식으로 각각 5개씩 총 15개를 반환해 주세요:
+                text: `현지인이 자주 가고 풍경 위주의 평화로운 여행을 원하는 사람이 갈만한 "country" 의 "city" 에 있는 "hotel", "restaurants", "touristSpots"를 JSON 형식으로 각각 5개씩 총 15개를 반환해 주세요:
                 {
                     "hotels": [
                         {
@@ -116,11 +116,11 @@ async function fetchTouristData() {
     console.log("✅ API 데이터 저장:", parsedData);
 
     // ✅ **카테고리를 수작업으로 할당**
-    parsedData.hotels.forEach((hotel) => (hotel.category = "호텔"));
+    parsedData.hotels.forEach((hotel) => (hotel.category = "hotels"));
     parsedData.restaurants.forEach(
-      (restaurant) => (restaurant.category = "식당")
+      (restaurant) => (restaurant.category = "restaurants")
     );
-    parsedData.touristSpots.forEach((spot) => (spot.category = "관광지"));
+    parsedData.touristSpots.forEach((spot) => (spot.category = "touristSpots"));
 
     localStorage.setItem("touristData", JSON.stringify(parsedData));
     return parsedData;
@@ -133,9 +133,9 @@ async function fetchTouristData() {
 async function updateContent(category) {
   const { hotels, restaurants, touristSpots } = await fetchTouristData();
   const dataMap = {
-    호텔: hotels,
-    식당: restaurants,
-    관광지: touristSpots,
+    hotels: hotels,
+    restaurants: restaurants,
+    touristSpots: touristSpots,
   };
 
   console.log(`📌 ${category} 데이터:`, dataMap[category]);
@@ -143,11 +143,9 @@ async function updateContent(category) {
   const contentContainer = document.getElementById(`${category}-content`);
   contentContainer.innerHTML = ""; // 기존 내용 초기화
 
-  dataMap[category].forEach((place) => {
-    console.log(`📌 ${category} 장소:`, place); // 장소 객체 전체 출력
-    console.log(`📌 장소 이름: ${place.name}`); // 이름만 출력
+  dataMap[category].forEach((place, index) => {
+    console.log(`📌 ${category} 장소:`, place);
 
-    // sanitize the place object to handle null values
     const sanitizedPlace = sanitizeObject(place);
 
     const placeElement = document.createElement("div");
@@ -160,6 +158,7 @@ async function updateContent(category) {
     );
 
     placeElement.innerHTML = `
+      <input type="checkbox" class="place-checkbox" data-category="${category}" data-index="${index}">
       <div class="flex-1">
           <h3 class="font-medium">${sanitizedPlace.name || "null"}</h3>
           <div class="text-sm text-gray-600">
@@ -180,6 +179,52 @@ async function updateContent(category) {
     contentContainer.appendChild(placeElement);
   });
 }
+
+function saveSelectedData() {
+  const checkboxes = document.querySelectorAll(".place-checkbox");
+  const updatedData = { hotels: [], restaurants: [], touristSpots: [] };
+  const deletedData = { hotels: [], restaurants: [], touristSpots: [] };
+
+  checkboxes.forEach((checkbox) => {
+    // 'touristSpots' 대신 'touristSpots'와 같이 영어 키로 데이터 처리
+    const category = checkbox.dataset.category;
+    const index = parseInt(checkbox.dataset.index, 10);
+    const allData = JSON.parse(localStorage.getItem("touristData")) || {
+      hotels: [],
+      restaurants: [],
+      touristSpots: [],
+    };
+
+    // 'category' 값이 올바른지 확인
+    if (
+      category &&
+      updatedData[category] !== undefined &&
+      deletedData[category] !== undefined
+    ) {
+      if (checkbox.checked) {
+        updatedData[category].push(allData[category][index]);
+      } else {
+        deletedData[category].push(allData[category][index]);
+      }
+    } else {
+      console.error("❌ 잘못된 category 값:", category);
+    }
+  });
+
+  // 로컬 스토리지에 저장
+  localStorage.setItem("touristData", JSON.stringify(updatedData));
+
+  console.log("✅ 저장된 데이터:", updatedData);
+  console.log("❌ 삭제된 데이터:", deletedData);
+}
+
+// ✅ 저장하기 버튼 추가
+const saveButton = document.createElement("button");
+saveButton.textContent = "저장하기";
+saveButton.classList.add("mt-4", "p-2", "bg-blue-500", "text-white", "rounded");
+saveButton.onclick = saveSelectedData;
+
+document.body.appendChild(saveButton);
 
 async function handleMarkerClick(name) {
   console.log("📌 클릭된 장소 이름:", name); // name 값 확인
@@ -225,6 +270,6 @@ function initMap(location) {
 }
 
 window.onload = async () => {
-  // 1. 먼저 관광지 데이터를 로드
-  await updateContent("관광지");
+  // 1. 먼저 touristSpots 데이터를 로드
+  await updateContent("touristSpots");
 };
