@@ -1,3 +1,5 @@
 .env
-
+.package.json
+.package-lock.json
+.server.js
 node_modules/

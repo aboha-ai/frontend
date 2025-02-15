@@ -6,6 +6,7 @@
     <title>여행 가이드 & 현지 팁</title>
     <link rel="stylesheet" href="/docs/travel_tips/styles/styles.css" />
     <link rel="stylesheet" href="/docs/travel_tips/styles/chatbot.css" />
+    <link rel="stylesheet" href="/docs/travel_tips/styles/modal.css" />
   </head>
   <!-- Axios CDN 추가 -->
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -36,7 +37,7 @@
         <p class="schedule-text">현재 여행 일정이 없습니다.</p>
         <div class="schedule-buttons">
           <button class="btn btn-primary">+ 새로운 여행 일정 만들기</button>
-          <button class="btn btn-secondary">
+          <button class="btn btn-secondary" id="openScheduleModal">
             <img src="/docs/travel_tips/assets/SVG-3.svg" alt="" />
             저장된 여행 목록 불러오기
           </button>
@@ -110,7 +111,11 @@
     <!-- <script src="script.js"></script> -->
     <!-- 마크다운을 HTML로 변환하는 marked.js 추가 -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- 모달 기능 추가 -->
+    <script src="/docs/travel_tips/js/schedule.js"></script>
 
     <script src="/docs/travel_tips/js/chatbot.js"></script>
+    <script src="/docs/travel_tips/js/test.js"></script>
+    <script src="/docs/travel_tips/js/travel_tips.js"></script>
   </body>
 </html>

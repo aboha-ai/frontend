@@ -1,11 +1,11 @@
 // ✅ Gemini API 키 설정
-// const GEMINI_API_KEY = "";
+const GEMINI_API_KEY = "AIzaSyDs-Fz6JgaLkQ4WeYwpsyGOL8f2CjA5a7U";
 
-const API_URL =
-  window.location.hostname === "localhost"
-    ? "http://localhost:3000/api/chat" // ✅ 로컬 개발 환경
-    : "https://your-glitch-project.glitch.me/api/chat";
-// ✅ 모델 리스트 (사용량 초과 시 자동 전환)
+// const API_URL =
+//   window.location.hostname === "localhost"
+//     ? "http://localhost:3000/api/chat" // ✅ 로컬 개발 환경
+//     : "https://your-glitch-project.glitch.me/api/chat";
+// // ✅ 모델 리스트 (사용량 초과 시 자동 전환)
 const GEMINI_MODELS = [
   "gemini-2.0-flash",
   "gemini-2.0-flash-lite-preview-02-05",
