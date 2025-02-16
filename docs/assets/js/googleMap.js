@@ -12,13 +12,13 @@ function initMap() {
 // 위치 정보가 제공되었을 때 해당 위치로 지도와 마커 업데이트
 async function showLocation(location) {
   try {
-    // location에 위도(lat)와 경도(lng)가 없다면, name으로 검색
+    // location에 위도(lat)와 경도(lng)가 없다면, name, address, country로 검색
     if (!location.lat || !location.lng) {
-      if (location.name) {
-        const geolocation = await geocodeByName(location.name); // 이름으로 검색
+      if (location.name || location.address || location.country) {
+        const geolocation = await geocodeByDetails(location); // 세부 정보로 검색
         location = { ...location, ...geolocation };
       } else {
-        console.error("장소 이름이 제공되지 않았습니다.");
+        console.error("장소 이름, 주소 또는 국가가 제공되지 않았습니다.");
         return;
       }
     }
@@ -44,16 +44,20 @@ async function showLocation(location) {
   }
 }
 
-// 장소 이름을 위도/경도로 변환하는 함수
-async function geocodeByName(name) {
+// 장소 이름, 주소, 국가를 위도/경도로 변환하는 함수
+async function geocodeByDetails(location) {
   const geocoder = new google.maps.Geocoder();
+  const { name, address, country } = location;
+
+  const fullAddress = `${name || ""} ${address || ""} ${country || ""}`.trim();
+
   return new Promise((resolve, reject) => {
-    geocoder.geocode({ address: name }, (results, status) => {
+    geocoder.geocode({ address: fullAddress }, (results, status) => {
       if (status === "OK" && results.length > 0) {
-        const location = results[0].geometry.location;
+        const geoLocation = results[0].geometry.location;
         resolve({
-          lat: location.lat(),
-          lng: location.lng(),
+          lat: geoLocation.lat(),
+          lng: geoLocation.lng(),
         });
       } else {
         reject(`Geocode failed: ${status} - 장소를 찾을 수 없습니다.`);

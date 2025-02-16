@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // 탭 변경 함수
   function changeTab(tabName) {
     console.log(`🔄 ${tabName} 탭 선택됨`);
 
@@ -30,9 +31,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 글로벌 함수 등록 (HTML에서 호출 가능하도록)
   window.changeTab = changeTab;
-});
 
-document.addEventListener("DOMContentLoaded", () => {
+  // 새로고침 버튼 이벤트 처리
   const refreshBtn = document.getElementById("refresh-btn");
 
   if (refreshBtn) {
@@ -46,6 +46,9 @@ document.addEventListener("DOMContentLoaded", () => {
       await updateContent();
 
       console.log("✅ 새로운 추천이 완료되었습니다!");
+
+      // 새로고침 후, 기본 탭을 활성화하기
+      changeTab("touristSpots");
     });
   }
 });

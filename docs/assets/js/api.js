@@ -1,4 +1,4 @@
-const GEO_API_KEY = "AIzaSyAuQhWQkZgxQeWiDVO0aklq91W00amtJUI"; // Geocoding API 키
+const GEO_API_KEY = "AIzaSyDNRlG7nHslXZrM3YPFAeYY_w7JpRz_oY8"; // Geocoding API 키
 const API_KEY = "AIzaSyBQ6n3ZpaQ8ocsvrog1CqgZBJW1ilgj5Lg";
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 const GEO_API_URL = "https://maps.googleapis.com/maps/api/geocode/json"; // Geocoding API URL
@@ -16,12 +16,16 @@ function sanitizeObject(obj) {
   return sanitizedObj;
 }
 
-// Geocoding API를 사용해 장소 이름으로 위도/경도 가져오기
-async function fetchGeolocationFromName(name) {
-  console.log("📌 Geocoding API에 전달된 장소 이름:", name); // 전달된 name 값 확인
+// Geocoding API를 사용해 장소 이름, 주소, 국가로 위도/경도 가져오기
+async function fetchGeolocationFromDetails(name, address, country) {
+  console.log("📌 Geocoding API에 전달된 장소 정보:", {
+    name,
+    address,
+    country,
+  });
 
   const geocodingAPIUrl = `${GEO_API_URL}?address=${encodeURIComponent(
-    name
+    `${name}, ${address}, ${country}`
   )}&key=${GEO_API_KEY}`;
   const response = await fetch(geocodingAPIUrl);
   const data = await response.json();
@@ -170,7 +174,9 @@ async function updateContent(category) {
               }</span>
           </div>
       </div>
-      <button onclick='handleMarkerClick("${sanitizedPlace.name}")' 
+      <button onclick='handleMarkerClick("${sanitizedPlace.name}", "${
+      sanitizedPlace.address
+    }", "${sanitizedPlace.country}")' 
               class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
           <i class="fas fa-map-marker-alt"></i>
       </button>
@@ -185,8 +191,9 @@ function saveSelectedData() {
   const updatedData = { hotels: [], restaurants: [], touristSpots: [] };
   const deletedData = { hotels: [], restaurants: [], touristSpots: [] };
 
+  let hasChecked = false; // 체크된 항목이 있는지 확인하는 변수
+
   checkboxes.forEach((checkbox) => {
-    // 'touristSpots' 대신 'touristSpots'와 같이 영어 키로 데이터 처리
     const category = checkbox.dataset.category;
     const index = parseInt(checkbox.dataset.index, 10);
     const allData = JSON.parse(localStorage.getItem("touristData")) || {
@@ -195,7 +202,6 @@ function saveSelectedData() {
       touristSpots: [],
     };
 
-    // 'category' 값이 올바른지 확인
     if (
       category &&
       updatedData[category] !== undefined &&
@@ -203,6 +209,7 @@ function saveSelectedData() {
     ) {
       if (checkbox.checked) {
         updatedData[category].push(allData[category][index]);
+        hasChecked = true; // 체크된 항목이 있으면 true로 설정
       } else {
         deletedData[category].push(allData[category][index]);
       }
@@ -211,8 +218,16 @@ function saveSelectedData() {
     }
   });
 
-  // 로컬 스토리지에 저장
+  if (!hasChecked) {
+    alert("저장할 항목을 선택해주세요.");
+    return; // 체크된 항목이 없으면 저장하지 않음
+  }
+
+  // 로컬 스토리지에 업데이트된 데이터 저장
   localStorage.setItem("touristData", JSON.stringify(updatedData));
+
+  // 삭제된 데이터도 로컬 스토리지에 저장
+  localStorage.setItem("deletedTouristData", JSON.stringify(deletedData));
 
   console.log("✅ 저장된 데이터:", updatedData);
   console.log("❌ 삭제된 데이터:", deletedData);
@@ -221,16 +236,25 @@ function saveSelectedData() {
 // ✅ 저장하기 버튼 추가
 const saveButton = document.createElement("button");
 saveButton.textContent = "저장하기";
-saveButton.classList.add("mt-4", "p-2", "bg-blue-500", "text-white", "rounded");
+saveButton.classList.add(
+  "mt-4",
+  "p-2",
+  "bg-blue-500",
+  "text-white",
+  "rounded",
+  "fixed",
+  "bottom-4",
+  "left-4"
+);
 saveButton.onclick = saveSelectedData;
 
 document.body.appendChild(saveButton);
 
-async function handleMarkerClick(name) {
-  console.log("📌 클릭된 장소 이름:", name); // name 값 확인
+async function handleMarkerClick(name, address, country) {
+  console.log("📌 클릭된 장소 정보:", { name, address, country });
 
   try {
-    const location = await fetchGeolocationFromName(name);
+    const location = await fetchGeolocationFromDetails(name, address, country);
     console.log("📌 위치 정보:", location);
 
     if (window.initMap) {
@@ -268,8 +292,3 @@ function initMap(location) {
     infoWindow.open(map, marker);
   });
 }
-
-window.onload = async () => {
-  // 1. 먼저 touristSpots 데이터를 로드
-  await updateContent("touristSpots");
-};
