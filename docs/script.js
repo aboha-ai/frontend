@@ -7,10 +7,18 @@ let selectedThemes = {
 
 // 페이지 로드 시: 이벤트 리스너 등록
 document.addEventListener("DOMContentLoaded", () => {
-  // 저장된 테마 불러오기 (페이지 로드 시)
+  // localStorage에서 저장된 테마, 시작 날짜, 종료 날짜 불러오기
   const savedThemes = localStorage.getItem("selectedThemes");
   if (savedThemes) {
     selectedThemes = JSON.parse(savedThemes);
+  }
+  const savedStartDate = localStorage.getItem("startDate");
+  if (savedStartDate) {
+    document.getElementById("startDate").value = savedStartDate;
+  }
+  const savedEndDate = localStorage.getItem("endDate");
+  if (savedEndDate) {
+    document.getElementById("endDate").value = savedEndDate;
   }
 
   initializeThemeButtons();
@@ -61,33 +69,54 @@ document.addEventListener("DOMContentLoaded", () => {
       sendDataAndRedirect("/itinerary.html");
     });
   }
+
+  // 모달 닫기 버튼 이벤트 리스너
+  const closeAlertButton = document.getElementById("closeAlertButton");
+  if (closeAlertButton) {
+    closeAlertButton.addEventListener("click", closeAlert);
+  }
 });
 
 // 로컬 스토리지 초기화
 function resetLocalStorage() {
-  localStorage.clear();
-  alert("로컬 스토리지 데이터가 초기화되었습니다.");
+  //localStorage.clear(); alert()때문에 주석처리.
+  showAlert("로컬 스토리지 데이터가 초기화되었습니다."); // showAlert() 사용
   selectedThemes = {
     accommodation: [],
     food: [],
     attractions: [],
   };
   initializeThemeButtons();
+  localStorage.clear(); // localStorage 초기화
 }
 
 // 테마 선택 모달 관련 함수들
 function openThemeModal() {
   const cityInput = document.getElementById("cityInput").value;
   if (!cityInput) {
-    alert("도시와 나라를 입력해주세요.");
+    // alert("도시와 나라를 입력해주세요.");
+    showAlert("도시와 나라를 입력해주세요.");
     return;
   }
   // 쉼표로 도시와 나라 분리
   const [city, country] = cityInput.split(",").map((part) => part.trim());
 
   if (!city || !country) {
-    alert("도시와 나라를 쉼표(,)로 구분하여 입력해주세요 예시)서울,대한민국");
+    // alert("도시와 나라를 쉼표(,)로 구분하여 입력해주세요 예시)서울,대한민국");
+    showAlert(
+      "도시와 나라를 쉼표(,)로 구분하여 입력해주세요 예시)서울,대한민국"
+    );
     return;
+  }
+
+  // 이전에 선택했던 날짜가 있으면 복원
+  const savedStartDate = localStorage.getItem("startDate");
+  if (savedStartDate) {
+    document.getElementById("startDate").value = savedStartDate;
+  }
+  const savedEndDate = localStorage.getItem("endDate");
+  if (savedEndDate) {
+    document.getElementById("endDate").value = savedEndDate;
   }
 
   document.getElementById(
@@ -141,7 +170,6 @@ function handleThemeButtonClick(event) {
     button.classList.add("bg-blue-500", "text-white"); // 선택 시 스타일
     button.classList.remove("bg-blue-100", "text-blue-800");
   }
-
   // localStorage에 변경된 selectedThemes 객체 저장
   localStorage.setItem("selectedThemes", JSON.stringify(selectedThemes));
 }
@@ -151,26 +179,40 @@ function sendDataAndRedirect(redirectUrl) {
   const cityInput = document.getElementById("cityInput").value;
 
   if (!cityInput) {
-    alert("도시와 나라를 입력해주세요.");
+    // alert("도시와 나라를 입력해주세요.");
+    showAlert("도시와 나라를 입력해주세요."); // showAlert() 사용
     return;
   }
 
   const [city, country] = cityInput.split(",").map((part) => part.trim());
 
   if (!city || !country) {
-    alert("도시와 나라를 쉼표(,)로 구분하여 입력해주세요 예시)서울,대한민국");
+    // alert("도시와 나라를 쉼표(,)로 구분하여 입력해주세요 예시)서울,대한민국");
+    showAlert(
+      "도시와 나라를 쉼표(,)로 구분하여 입력해주세요 예시)서울,대한민국"
+    ); //showAlert()사용.
     return;
   }
 
-  //  localStorage에, city와 country를 저장.
+  // 시작 날짜와 종료 날짜 가져오기
+  const startDate = document.getElementById("startDate").value;
+  const endDate = document.getElementById("endDate").value;
+
+  // **************************************************************
+  //  localStorage에, city와 country, startDate, endDate를 저장.
   localStorage.setItem("selectedCity", city);
   localStorage.setItem("selectedCountry", country);
+  localStorage.setItem("startDate", startDate);
+  localStorage.setItem("endDate", endDate);
+  // **************************************************************
 
-  // 전송할 데이터 객체 생성 (선택된 도시와 테마)
+  // 전송할 데이터 객체 생성 (선택된 도시, 나라, 테마, 시작/종료 날짜)
   const dataToSend = {
     selectedCity: city, // 도시 이름
     selectedCountry: country, // 나라 이름
     selectedThemes: selectedThemes, // 카테고리별 테마 객체
+    startDate: startDate, // 시작 날짜
+    endDate: endDate, // 종료 날짜
     destinations: [], // 빈 배열 (index.html에서는 destinations 정보 사용 안 함)
   };
 
@@ -179,4 +221,14 @@ function sendDataAndRedirect(redirectUrl) {
 
   // 지정된 URL로 리디렉션
   window.location.href = redirectUrl;
+}
+
+// 커스텀 알림 모달 함수
+function showAlert(message) {
+  document.getElementById("alertMessage").textContent = message;
+  document.getElementById("customAlert").classList.remove("hidden");
+}
+
+function closeAlert() {
+  document.getElementById("customAlert").classList.add("hidden");
 }
