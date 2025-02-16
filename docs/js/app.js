@@ -5,11 +5,11 @@ let currentDay = 1;
 let totalDays = 1; // 초기 Day 수
 let currentEventEditing = null;
 // API 키들
-const GOOGLE_MAP_API = "AIzaSyCw3yxyhLMb5QkP19vsufRq9Q2Bco2ATks";
-const WEATHER_API_KEY = "6JMUS56QRRG2LJMKYWKXTPH7Y";
-const accessKey = "jKmpPpL00k6bhiDWQzwXElaHu9DZpB9FjYwqT00yC7I";
-const TRANSLATION_API_KEY = "AIzaSyCw3yxyhLMb5QkP19vsufRq9Q2Bco2ATks"; // 수정: 본인의 Cloud Translation API 키 입력
-
+// 수정: 본인의 Cloud Translation API 키 입력
+const GOOGLE_MAP_API = process.env.googleAPI;
+const WEATHER_API_KEY = process.env.weatherAPI;
+const accessKey = process.env.imageAccessAPI;
+const TRANSLATION_API_KEY = process.env.googleAPI;
 // "HH:MM" 형식을 분 단위로 변환하는 유틸리티 함수
 function getTimeInMinutes(timeStr) {
   const parts = timeStr.split(":");
@@ -207,6 +207,11 @@ function createEventElement(dayNumber, eventData) {
           ${
             eventData.details.link
               ? `<li>홈페이지: <a href="${eventData.details.link}" target="_blank" class="text-blue-500">${eventData.details.link}</a></li>`
+              : ""
+          }
+          ${
+            eventData.details.tips
+              ? `<li>Tips: ${eventData.details.tips}</li>`
               : ""
           }
         </ul>`;
