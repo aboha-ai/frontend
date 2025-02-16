@@ -65,7 +65,7 @@ async function fetchTouristData() {
                         {
                             "name": "이름",
                             "link": "웹사이트 URL",
-                            "price": "1박 가격",
+                            "cost": "1박 가격",
                             "address": "상세 주소",
                             "country": "국가",
                             "city": "도시",
@@ -78,7 +78,7 @@ async function fetchTouristData() {
                         {
                             "name": "이름",
                             "link": "웹사이트 URL",
-                            "price": "평균 가격",
+                            "cost": "평균 가격",
                             "address": "상세 주소",
                             "country": "국가",
                             "city": "도시",
@@ -91,7 +91,7 @@ async function fetchTouristData() {
                         {
                             "name": "이름",
                             "link": "웹사이트 URL",
-                            "price": "입장료",
+                            "cost": "입장료",
                             "address": "상세 주소",
                             "country": "국가",
                             "city": "도시",
@@ -231,6 +231,114 @@ function saveSelectedData() {
 
   console.log("✅ 저장된 데이터:", updatedData);
   console.log("❌ 삭제된 데이터:", deletedData);
+  changeUpdatedData(updatedData);
+}
+function changeUpdatedData(updatedData) {
+  const tripData = {
+    title: "test",
+    location: {
+      arrival_time: "2025-04-15T10:00:00",
+      address: "서울, 대한민국",
+      city: "Seoul",
+    },
+    itinerary: [],
+  };
+
+  // 여행 시작 날짜와 끝 날짜를 계산하여 랜덤 day 생성
+  const getRandomDate = (startDate, endDate) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const randomTime =
+      start.getTime() + Math.random() * (end.getTime() - start.getTime());
+    return new Date(randomTime);
+  };
+
+  // time과 title을 랜덤으로 생성
+  const getRandomTimeAndTitle = () => {
+    const times = ["08:00", "13:00", "18:00"];
+    const titles = {
+      "08:00": "아침 식사",
+      "13:00": "점심 식사",
+      "18:00": "저녁 식사",
+    };
+
+    const randomTime = times[Math.floor(Math.random() * times.length)];
+    return {
+      time: randomTime,
+      title: titles[randomTime],
+    };
+  };
+
+  // Hotels, Restaurants, and Tourist Spots을 이벤트로 변환
+  const createEvent = (time, title, location, link, cost) => ({
+    time: time,
+    title: title,
+    location: location,
+    details: {
+      open_time: "24시간",
+      cost: cost || null,
+      link: link,
+    },
+  });
+
+  // 여행 시작 날짜와 끝 날짜
+  const startDate = "2025-04-15";
+  const endDate = "2025-04-17"; // 예시로 3일 여행이라고 가정
+
+  // Hotels에 대한 itinerary 추가
+  updatedData.hotels.forEach((hotel, index) => {
+    const { time, title } = getRandomTimeAndTitle();
+    const randomDate = getRandomDate(startDate, endDate);
+    const formattedDate = randomDate.toISOString().split("T")[0]; // YYYY-MM-DD 형식으로 날짜 포맷
+
+    const event = createEvent(
+      time,
+      title,
+      hotel.address,
+      hotel.link,
+      hotel.cost
+    );
+
+    // 기존 itinerary에 맞춰 day와 date를 추가
+    if (!tripData.itinerary[index]) {
+      tripData.itinerary.push({
+        day: index + 1,
+        date: formattedDate, // 랜덤 날짜
+        events: [event],
+      });
+    } else {
+      tripData.itinerary[index].events.push(event);
+    }
+  });
+
+  // Restaurants에 대한 itinerary 추가
+  updatedData.restaurants.forEach((restaurant, index) => {
+    const { time, title } = getRandomTimeAndTitle();
+    const randomDate = getRandomDate(startDate, endDate);
+    const formattedDate = randomDate.toISOString().split("T")[0]; // YYYY-MM-DD 형식으로 날짜 포맷
+
+    const event = createEvent(
+      time,
+      title,
+      restaurant.address,
+      restaurant.link,
+      restaurant.price
+    );
+
+    // 기존 itinerary에 맞춰 day와 date를 추가
+    if (!tripData.itinerary[index]) {
+      tripData.itinerary.push({
+        day: index + 1,
+        date: formattedDate, // 랜덤 날짜
+        events: [event],
+      });
+    } else {
+      tripData.itinerary[index].events.push(event);
+    }
+  });
+
+  // 결과 출력 (테스트용)
+  console.log(tripData);
 }
 
 // ✅ 저장하기 버튼 추가
