@@ -62,6 +62,7 @@
             >
             <div class="relative">
               <input
+                id="stay-location"
                 type="text"
                 placeholder="도시 또는 호텔명"
                 class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-custom focus:border-custom"
@@ -79,6 +80,7 @@
             >
             <div class="relative">
               <input
+                id="check-in"
                 type="date"
                 class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-custom focus:border-custom"
               />
@@ -95,6 +97,7 @@
             >
             <div class="relative">
               <input
+                id="check-out"
                 type="date"
                 class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-custom focus:border-custom"
               />
@@ -110,6 +113,7 @@
               >인원</label
             >
             <select
+              id="guests"
               class="w-full py-2 pl-3 pr-10 border border-gray-300 rounded-md focus:ring-custom focus:border-custom"
             >
               <option>1명</option>
@@ -120,6 +124,7 @@
           </div>
           <div class="md:col-span-4 flex justify-end">
             <button
+              id="search-stays"
               type="submit"
               class="!rounded-button bg-custom text-white px-6 py-2 hover:bg-opacity-90 transition-colors"
             >
@@ -129,6 +134,7 @@
         </form>
       </div>
       <div
+        id="stays-list"
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 max-w-6xl mx-auto"
       >
         <div class="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -343,5 +349,8 @@
     </main>
     <!-- 푸터를 동적으로 삽입할 컨테이너 -->
     <div id="footer-container"></div>
+
+    <!-- staysMain.js 로드 -->
+    <script src="/js/stays/staysMain.js" type="module"></script>
   </body>
 </html>
