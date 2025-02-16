@@ -1,4 +1,4 @@
-// app.js - 최종 개선 코드 (여행 개요 수정 포함, 나라/도시 입력 필드 분리 및 Google Autocomplete 적용, 날씨 API 수정)
+// app.js - 최종 개선 코드 (여행 개요 수정 포함, 나라/도시 입력 필드 분리 및 Google Autocomplete 적용, 날씨 API 수정, 한글 도시명 영어 번역 적용)
 
 // 전역 변수 선언
 let currentDay = 1;
@@ -8,6 +8,7 @@ let currentEventEditing = null;
 const GOOGLE_MAP_API = "AIzaSyCw3yxyhLMb5QkP19vsufRq9Q2Bco2ATks";
 const WEATHER_API_KEY = "6JMUS56QRRG2LJMKYWKXTPH7Y";
 const accessKey = "jKmpPpL00k6bhiDWQzwXElaHu9DZpB9FjYwqT00yC7I";
+const TRANSLATION_API_KEY = "AIzaSyCw3yxyhLMb5QkP19vsufRq9Q2Bco2ATks"; // 수정: 본인의 Cloud Translation API 키 입력
 
 // "HH:MM" 형식을 분 단위로 변환하는 유틸리티 함수
 function getTimeInMinutes(timeStr) {
@@ -178,6 +179,7 @@ function confirmDeleteDay() {
 }
 
 // 이벤트 카드 생성 함수 – preset 상세 내용과 메모를 별도 구획으로 표시
+
 function createEventElement(dayNumber, eventData) {
   const eventId =
     eventData.id || "event-" + Date.now() + Math.floor(Math.random() * 1000);
@@ -219,6 +221,19 @@ function createEventElement(dayNumber, eventData) {
                 </div>`;
   }
 
+  // 수정: 오른쪽 칼럼에 지도 iframe 추가 (Google Maps Embed API 사용)
+  // eventData.location 텍스트 주소를 이용하여 지도를 표시합니다.
+  const mapIframe = `<iframe 
+      src="https://www.google.com/maps/embed/v1/place?key=${GOOGLE_MAP_API}&q=${encodeURIComponent(
+    eventData.location
+  )}" 
+      width="100%" 
+      height="200" 
+      style="border:0;" 
+      allowfullscreen 
+      loading="lazy">
+    </iframe>`;
+
   container.innerHTML = `
         <div class="absolute -left-2 top-0 w-4 h-4 rounded-full bg-custom"></div>
         <div class="bg-gray-50 rounded-lg p-4">
@@ -242,9 +257,7 @@ function createEventElement(dayNumber, eventData) {
               <button class="edit-event-btn text-gray-600 hover:text-red-500 px-3 py-1.5 !rounded-button" onclick="openEditEventModal('${eventId}')">
                 <i class="fas fa-pencil-alt"></i>
               </button>
-              <button class="delete-event-btn text-gray-600 hover:text-red-500 px-3 py-1.5 !rounded-button" onclick="openDeleteEventModal('${eventId}', '${
-    eventData.title
-  }')">
+              <button class="delete-event-btn text-gray-600 hover:text-red-500 px-3 py-1.5 !rounded-button" onclick="openDeleteEventModal('${eventId}', '${eventData.title}')">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
@@ -256,7 +269,7 @@ function createEventElement(dayNumber, eventData) {
                 ${memoHtml}
               </div>
               <div>
-                ${/* 지도 iframe 부분 주석 처리 */ ""}
+                ${mapIframe} <!-- 수정: 지도 iframe 추가 -->
               </div>
             </div>
           </div>
@@ -295,10 +308,17 @@ function openEventModal(mode, eventId = null) {
   const modal = document.getElementById("add-event-modal");
   // "event-description" 필드를 readOnly 처리하여 preset 수정은 불가
   document.getElementById("event-description").readOnly = true;
+
+  // 채워넣을 "Day" select 필드 업데이트 (예: id="event-day")
+  // 현재 존재하는 day 번호 옵션을 업데이트하는 함수 호출
+  updateEventDayOptions();
+
   if (mode === "add") {
     document.getElementById("event-modal-title").innerText = "Add New Event";
     document.getElementById("event-id").value = "";
     document.getElementById("event-form").reset();
+    // 기본 선택값은 현재 day (global currentDay)
+    document.getElementById("event-day").value = currentDay;
   } else if (mode === "edit" && eventId) {
     document.getElementById("event-modal-title").innerText = "Edit Event";
     const eventElem = document.getElementById(eventId);
@@ -330,6 +350,10 @@ function openEventModal(mode, eventId = null) {
     document.getElementById("event-location").value = location;
     document.getElementById("event-description").value = description;
     document.getElementById("event-memo").value = memo;
+    // 수정: 편집 시 기존 이벤트가 속한 Day 번호를 채움
+    // (예를 들어, 편집 시 현재 global currentDay가 아니라 event이 속한 day가 필요하면 해당 정보를 저장해두어야 함)
+    // 여기서는 간단하게 현재 day(global currentDay)를 기본값으로 사용합니다.
+    document.getElementById("event-day").value = currentDay;
   }
   modal.classList.remove("hidden");
   modal.classList.add("flex");
@@ -343,6 +367,7 @@ function openEditEventModal(eventId) {
   openEventModal("edit", eventId);
 }
 
+// 수정: eventModalSubmit 함수 - 선택된 day 번호에 따라 이벤트 이동 처리
 function eventModalSubmit(e) {
   e.preventDefault();
   const eventId = document.getElementById("event-id").value;
@@ -351,6 +376,10 @@ function eventModalSubmit(e) {
   const location = document.getElementById("event-location").value;
   let description = document.getElementById("event-description").value;
   const memo = document.getElementById("event-memo").value;
+  // 새로운 필드: 선택된 day 번호 (문자열을 숫자로 변환)
+  const selectedDay = parseInt(document.getElementById("event-day").value);
+
+  // 기존에 저장된 이벤트의 description 보존 로직은 그대로 유지
   if (eventId) {
     const dayData = window.tripData.itinerary.find(
       (day) => day.day === currentDay
@@ -366,6 +395,7 @@ function eventModalSubmit(e) {
       }
     }
   }
+
   const eventData = {
     id: eventId || "event-" + Date.now() + Math.floor(Math.random() * 1000),
     title,
@@ -374,50 +404,99 @@ function eventModalSubmit(e) {
     description,
     memo,
   };
-  let eventsContainer = document.getElementById(
-    "day" + currentDay + "-events-container"
-  );
-  if (!eventsContainer) {
-    const dayContent = document.getElementById("day" + currentDay + "-content");
-    dayContent.innerHTML = "";
-    eventsContainer = document.createElement("div");
-    eventsContainer.className = "events-container";
-    eventsContainer.id = "day" + currentDay + "-events-container";
-    dayContent.appendChild(eventsContainer);
-  }
-  let dayData = window.tripData.itinerary.find((day) => day.day === currentDay);
-  if (!dayData) {
-    dayData = {
-      day: currentDay,
-      date: new Date().toISOString().split("T")[0],
-      events: [],
-    };
-    window.tripData.itinerary.push(dayData);
-  }
-  if (eventId) {
-    const existingEventIndex = dayData.events.findIndex(
-      (e) => e.id === eventId
+
+  // 만약 선택한 day가 현재 global currentDay와 다르면 이벤트 이동 처리
+  if (eventId && selectedDay !== currentDay) {
+    // 기존 day에서 이벤트 제거
+    const oldDayData = window.tripData.itinerary.find(
+      (day) => day.day === currentDay
     );
-    if (existingEventIndex !== -1) {
-      dayData.events[existingEventIndex] = eventData;
+    if (oldDayData) {
+      oldDayData.events = oldDayData.events.filter((e) => e.id !== eventId);
     }
+    // 새 day에 이벤트 추가
+    const newDayData = window.tripData.itinerary.find(
+      (day) => day.day === selectedDay
+    );
+    if (newDayData) {
+      newDayData.events.push(eventData);
+    }
+    // UI: 기존 day 컨테이너에서 해당 이벤트 요소 제거
     const eventElem = document.getElementById(eventId);
     if (eventElem) {
-      eventElem.replaceWith(createEventElement(currentDay, eventData));
+      eventElem.remove();
+    }
+    // UI: 새 day 컨테이너에 새 이벤트 추가
+    const newEventsContainer = document.getElementById(
+      "day" + selectedDay + "-events-container"
+    );
+    if (newEventsContainer) {
+      newEventsContainer.appendChild(
+        createEventElement(selectedDay, eventData)
+      );
     }
   } else {
-    dayData.events.push(eventData);
-    eventsContainer.appendChild(createEventElement(currentDay, eventData));
+    // 이벤트 추가/수정 (기존과 동일)
+    let eventsContainer = document.getElementById(
+      "day" + currentDay + "-events-container"
+    );
+    if (!eventsContainer) {
+      const dayContent = document.getElementById(
+        "day" + currentDay + "-content"
+      );
+      dayContent.innerHTML = "";
+      eventsContainer = document.createElement("div");
+      eventsContainer.className = "events-container";
+      eventsContainer.id = "day" + currentDay + "-events-container";
+      dayContent.appendChild(eventsContainer);
+    }
+    let dayData = window.tripData.itinerary.find(
+      (day) => day.day === currentDay
+    );
+    if (!dayData) {
+      dayData = {
+        day: currentDay,
+        date: new Date().toISOString().split("T")[0],
+        events: [],
+      };
+      window.tripData.itinerary.push(dayData);
+    }
+    if (eventId) {
+      const existingEventIndex = dayData.events.findIndex(
+        (e) => e.id === eventId
+      );
+      if (existingEventIndex !== -1) {
+        dayData.events[existingEventIndex] = eventData;
+      }
+      const eventElem = document.getElementById(eventId);
+      if (eventElem) {
+        eventElem.replaceWith(createEventElement(currentDay, eventData));
+      }
+    } else {
+      dayData.events.push(eventData);
+      eventsContainer.appendChild(createEventElement(currentDay, eventData));
+    }
   }
-  dayData.events.sort(
-    (a, b) => getTimeInMinutes(a.time) - getTimeInMinutes(b.time)
+
+  // 정렬 및 저장 업데이트
+  let dayData = window.tripData.itinerary.find(
+    (day) =>
+      day.day ===
+      (eventId && selectedDay !== currentDay ? selectedDay : currentDay)
   );
-  sortEvents(currentDay);
+  if (dayData) {
+    dayData.events.sort(
+      (a, b) => getTimeInMinutes(a.time) - getTimeInMinutes(b.time)
+    );
+  }
+  sortEvents(selectedDay !== currentDay ? selectedDay : currentDay);
   updateLocalStorage();
   console.log(
     "이벤트 추가/수정 후 localStorage:",
     localStorage.getItem("tripData")
   );
+
+  // 모달 닫기 및 폼 리셋
   document.getElementById("event-id").value = "";
   document.getElementById("event-form").reset();
   document.getElementById("add-event-modal").classList.add("hidden");
@@ -543,19 +622,52 @@ function setHeaderBackground(imageUrl) {
   }
 }
 
-// 날씨 정보 받아오기
-function updateWeatherForecast(data) {
-  // 수정: 도시가 아닌 나라와 도시를 모두 사용할 수 있도록 수정 (여기서는 city 우선, 없으면 country)
-  const tripLocation = data.location.city || data.location.country;
+// *** Cloud Translation API를 활용하여 한글 도시명을 영어로 변환하는 함수 ***
+// 수정: 이 함수는 Google Cloud Translation API를 사용합니다.
+async function translateToEnglish(text) {
+  const url = `https://translation.googleapis.com/language/translate/v2?key=${TRANSLATION_API_KEY}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      q: text,
+      target: "en",
+      format: "text",
+    }),
+  });
+  const result = await response.json();
+  return result.data.translations[0].translatedText;
+}
+
+// 날씨 정보 받아오기 (async 함수로 수정)
+// 수정: 한글 도시명이 있다면 Cloud Translation API를 사용해 영어로 변환한 후 날씨 API 호출
+async function updateWeatherForecast(data) {
+  let tripLocation =
+    data.location.englishCity ||
+    data.location.city ||
+    data.location.englishCountry ||
+    data.location.country ||
+    "Tokyo";
+  // 만약 한글이 포함되어 있으면 영어로 변환 시도
+  if (/[\u3131-\u3163\uac00-\ud7a3]/.test(tripLocation)) {
+    try {
+      tripLocation = await translateToEnglish(tripLocation);
+    } catch (error) {
+      console.error("Translation error:", error);
+    }
+  }
   const today = new Date();
   const startDate = today.toISOString().split("T")[0];
   const endDate = new Date(today);
   endDate.setDate(endDate.getDate() + 2);
   const endDateStr = endDate.toISOString().split("T")[0];
-  // 수정: URL을 백틱(``)으로 감싸 올바른 템플릿 문자열로 작성
+  // 수정: URL을 백틱(``)으로 감싼 템플릿 문자열 사용
   const weatherApiUrl = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(
     tripLocation
   )}/${startDate}/${endDateStr}?unitGroup=metric&lang=ko&key=${WEATHER_API_KEY}&contentType=json`;
+  console.log("Weather API URL:", weatherApiUrl);
   fetch(weatherApiUrl)
     .then((response) => response.json())
     .then((weatherData) => {
@@ -677,7 +789,11 @@ function initializeLocationAutocomplete() {
           comp.types.includes("country")
         );
         if (countryComp) {
+          // 사용자에게는 long_name(한글)을 보이지만, 영어 버전은 short_name 저장
           countryInput.value = countryComp.long_name;
+          if (!window.tripData.location) window.tripData.location = {};
+          window.tripData.location.country = countryComp.long_name;
+          window.tripData.location.englishCountry = countryComp.short_name;
         }
       }
     });
@@ -692,19 +808,25 @@ function initializeLocationAutocomplete() {
       const place = cityAutocomplete.getPlace();
       if (place && place.address_components) {
         let cityName = "";
+        let englishCityName = "";
         place.address_components.forEach((comp) => {
           if (comp.types.includes("locality")) {
             cityName = comp.long_name;
+            englishCityName = comp.short_name;
           }
         });
         if (!cityName) {
           place.address_components.forEach((comp) => {
             if (comp.types.includes("administrative_area_level_1")) {
               cityName = comp.long_name;
+              englishCityName = comp.short_name;
             }
           });
         }
         cityInput.value = cityName;
+        if (!window.tripData.location) window.tripData.location = {};
+        window.tripData.location.city = cityName;
+        window.tripData.location.englishCity = englishCityName;
       }
     });
   }
@@ -739,6 +861,769 @@ function initializeEventLocationAutocomplete() {
       input.value = place.formatted_address;
     }
   });
+}
+
+// 여행 개요 수정 모달을 "trip-overview" 영역 클릭 시 열도록 설정
+function enableEditableOverview() {
+  const overviewEl = document.getElementById("trip-overview");
+  if (overviewEl) {
+    overviewEl.style.cursor = "pointer";
+    overviewEl.addEventListener("click", openOverviewModal);
+  }
+}
+
+// Cloud Translation API를 사용하여 한글을 영어로 번역하는 함수
+// 수정: Google Cloud Translation API 사용, async 함수로 구현
+async function translateToEnglish(text) {
+  const url = `https://translation.googleapis.com/language/translate/v2?key=${TRANSLATION_API_KEY}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      q: text,
+      target: "en",
+      format: "text",
+    }),
+  });
+  const result = await response.json();
+  return result.data.translations[0].translatedText;
+}
+
+// 날씨 정보 받아오기 (async 함수로 수정)
+// 수정: 한글 도시명이 있으면 Cloud Translation API를 사용해 영어로 변환하여 날씨 API에 전달
+async function updateWeatherForecast(data) {
+  let tripLocation =
+    data.location.englishCity ||
+    data.location.city ||
+    data.location.englishCountry ||
+    data.location.country ||
+    "Tokyo";
+  // 한글 포함 여부 체크
+  if (/[\u3131-\u3163\uac00-\ud7a3]/.test(tripLocation)) {
+    try {
+      tripLocation = await translateToEnglish(tripLocation);
+    } catch (error) {
+      console.error("Translation error:", error);
+    }
+  }
+  const today = new Date();
+  const startDate = today.toISOString().split("T")[0];
+  const endDate = new Date(today);
+  endDate.setDate(endDate.getDate() + 2);
+  const endDateStr = endDate.toISOString().split("T")[0];
+  // 수정: URL을 백틱(``)으로 올바른 템플릿 문자열로 작성
+  const weatherApiUrl = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(
+    tripLocation
+  )}/${startDate}/${endDateStr}?unitGroup=metric&lang=ko&key=${WEATHER_API_KEY}&contentType=json`;
+  console.log("Weather API URL:", weatherApiUrl);
+  fetch(weatherApiUrl)
+    .then((response) => response.json())
+    .then((weatherData) => {
+      const forecastContainer = document.querySelector(".weather-forecast");
+      if (!forecastContainer) return;
+      forecastContainer.innerHTML = `<div class="text-lg font-medium mb-2">${tripLocation} 날씨</div>`;
+      weatherData.days.forEach((day) => {
+        const date = new Date(day.datetime);
+        const options = { month: "short", day: "numeric", year: "numeric" };
+        const dateStr = date.toLocaleDateString("ko-KR", options);
+        const weatherHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-sun text-yellow-500 text-2xl"></i>
+              <div>
+                <p class="font-medium">${dateStr}</p>
+                <p class="text-sm text-gray-600">${day.conditions}</p>
+              </div>
+            </div>
+            <p class="text-lg font-medium">${Math.round(day.temp)}°C</p>
+          </div>
+        `;
+        // 수정: innerHTML에 백틱 사용
+        forecastContainer.innerHTML += weatherHTML;
+      });
+    })
+    .catch((error) => console.error("Error fetching weather data:", error));
+}
+
+// localStorage 업데이트 함수 (즉시 저장)
+function updateLocalStorage() {
+  if (window.tripData) {
+    localStorage.setItem("tripData", JSON.stringify(window.tripData));
+  }
+}
+
+// 타이틀 변경 (헤더 h1 편집)
+function enableEditableTitle() {
+  const headerTitle = document.querySelector("header h1");
+  if (headerTitle) {
+    headerTitle.contentEditable = "true";
+    headerTitle.style.cursor = "text";
+    headerTitle.addEventListener("blur", function () {
+      if (window.tripData) {
+        window.tripData.title = headerTitle.innerText;
+        updateLocalStorage();
+      }
+    });
+  }
+}
+
+// 여행 개요 수정 모달 열기 함수 (여행 장소를 나라와 도시로 분리)
+function openOverviewModal() {
+  const modal = document.getElementById("overview-modal");
+  if (!modal) return;
+  if (window.tripData && window.tripData.location) {
+    // 수정: 나라와 도시 입력 필드로 분리하여 기존 값을 채움
+    document.getElementById("overview-country").value =
+      window.tripData.location.country || "";
+    document.getElementById("overview-city").value =
+      window.tripData.location.city || "";
+    if (window.tripData.location.arrival_time) {
+      document.getElementById("overview-start-date").value =
+        window.tripData.location.arrival_time.split("T")[0];
+    }
+  }
+  document.getElementById("overview-travelers").value =
+    window.tripData.travelers || "1";
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  // 동적으로 Google Maps API 로드 후 Autocomplete 초기화
+  loadGoogleMapsApi(initializeLocationAutocomplete);
+}
+
+// 여행 개요 수정 모달 닫기 함수
+function closeOverviewModal() {
+  const modal = document.getElementById("overview-modal");
+  if (!modal) return;
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+
+// 여행 개요 모달 제출 처리
+function overviewModalSubmit(e) {
+  e.preventDefault();
+  const startDate = document.getElementById("overview-start-date").value;
+  const country = document.getElementById("overview-country").value;
+  const city = document.getElementById("overview-city").value;
+  const travelers = document.getElementById("overview-travelers").value;
+  if (window.tripData && window.tripData.location) {
+    window.tripData.location.arrival_time = startDate + "T00:00:00";
+    // 수정: 나라와 도시를 각각 저장하고, address는 "나라, 도시" 형식으로 구성
+    window.tripData.location.country = country;
+    window.tripData.location.city = city;
+    window.tripData.location.address =
+      country && city ? country + ", " + city : country || city;
+  }
+  window.tripData.travelers = travelers;
+  updateLocalStorage();
+  updateTripUI(window.tripData);
+  closeOverviewModal();
+}
+
+// Google Places Autocomplete 초기화 함수 (나라와 도시 입력 필드에 적용)
+function initializeLocationAutocomplete() {
+  // 초기화: 나라 입력 필드 (overview-country)
+  const countryInput = document.getElementById("overview-country");
+  if (countryInput) {
+    const countryAutocomplete = new google.maps.places.Autocomplete(
+      countryInput,
+      {
+        types: ["(regions)"],
+      }
+    );
+    countryAutocomplete.addListener("place_changed", function () {
+      const place = countryAutocomplete.getPlace();
+      if (place && place.address_components) {
+        const countryComp = place.address_components.find((comp) =>
+          comp.types.includes("country")
+        );
+        if (countryComp) {
+          // 사용자에게는 long_name(한글)을 보이지만, 영어 버전은 short_name 저장
+          countryInput.value = countryComp.long_name;
+          if (!window.tripData.location) window.tripData.location = {};
+          window.tripData.location.country = countryComp.long_name;
+          window.tripData.location.englishCountry = countryComp.short_name;
+        }
+      }
+    });
+  }
+  // 초기화: 도시 입력 필드 (overview-city)
+  const cityInput = document.getElementById("overview-city");
+  if (cityInput) {
+    const cityAutocomplete = new google.maps.places.Autocomplete(cityInput, {
+      types: ["(cities)"],
+    });
+    cityAutocomplete.addListener("place_changed", function () {
+      const place = cityAutocomplete.getPlace();
+      if (place && place.address_components) {
+        let cityName = "";
+        let englishCityName = "";
+        place.address_components.forEach((comp) => {
+          if (comp.types.includes("locality")) {
+            cityName = comp.long_name;
+            englishCityName = comp.short_name;
+          }
+        });
+        if (!cityName) {
+          place.address_components.forEach((comp) => {
+            if (comp.types.includes("administrative_area_level_1")) {
+              cityName = comp.long_name;
+              englishCityName = comp.short_name;
+            }
+          });
+        }
+        cityInput.value = cityName;
+        if (!window.tripData.location) window.tripData.location = {};
+        window.tripData.location.city = cityName;
+        window.tripData.location.englishCity = englishCityName;
+      }
+    });
+  }
+}
+
+// Google Maps API 동적 로드 함수 (API 키는 app.js의 GOOGLE_MAP_API 사용)
+function loadGoogleMapsApi(callback) {
+  const existingScript = document.getElementById("googleMaps");
+  if (!existingScript) {
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAP_API}&libraries=places`;
+    script.id = "googleMaps";
+    script.async = true;
+    script.defer = true;
+    script.onload = callback;
+    document.head.appendChild(script);
+  } else {
+    if (callback) callback();
+  }
+}
+
+// 새로운 함수: event-location 입력란에 Google Autocomplete 적용 (이벤트 모달)
+function initializeEventLocationAutocomplete() {
+  const input = document.getElementById("event-location");
+  if (!input) return;
+  const autocomplete = new google.maps.places.Autocomplete(input, {
+    types: ["geocode"],
+  });
+  autocomplete.addListener("place_changed", function () {
+    const place = autocomplete.getPlace();
+    if (place.formatted_address) {
+      input.value = place.formatted_address;
+    }
+  });
+}
+
+// 여행 개요 수정 모달을 "trip-overview" 영역 클릭 시 열도록 설정
+function enableEditableOverview() {
+  const overviewEl = document.getElementById("trip-overview");
+  if (overviewEl) {
+    overviewEl.style.cursor = "pointer";
+    overviewEl.addEventListener("click", openOverviewModal);
+  }
+}
+
+// Cloud Translation API를 사용하여 한글을 영어로 번역하는 함수
+// 수정: Google Cloud Translation API 사용, async 함수로 구현
+async function translateToEnglish(text) {
+  const url = `https://translation.googleapis.com/language/translate/v2?key=${TRANSLATION_API_KEY}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      q: text,
+      target: "en",
+      format: "text",
+    }),
+  });
+  const result = await response.json();
+  return result.data.translations[0].translatedText;
+}
+
+// 날씨 정보 받아오기 (async 함수로 수정)
+// 수정: 한글 도시명이 있으면 Cloud Translation API를 사용해 영어로 변환하여 날씨 API에 전달
+async function updateWeatherForecast(data) {
+  let tripLocation =
+    data.location.englishCity ||
+    data.location.city ||
+    data.location.englishCountry ||
+    data.location.country ||
+    "Tokyo";
+  if (/[\u3131-\u3163\uac00-\ud7a3]/.test(tripLocation)) {
+    try {
+      tripLocation = await translateToEnglish(tripLocation);
+    } catch (error) {
+      console.error("Translation error:", error);
+    }
+  }
+  const today = new Date();
+  const startDate = today.toISOString().split("T")[0];
+  const endDate = new Date(today);
+  endDate.setDate(endDate.getDate() + 2);
+  const endDateStr = endDate.toISOString().split("T")[0];
+  // 수정: URL을 백틱(``)으로 올바른 템플릿 문자열로 작성
+  const weatherApiUrl = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(
+    tripLocation
+  )}/${startDate}/${endDateStr}?unitGroup=metric&lang=ko&key=${WEATHER_API_KEY}&contentType=json`;
+  console.log("Weather API URL:", weatherApiUrl);
+  fetch(weatherApiUrl)
+    .then((response) => response.json())
+    .then((weatherData) => {
+      const forecastContainer = document.querySelector(".weather-forecast");
+      if (!forecastContainer) return;
+      forecastContainer.innerHTML = `<div class="text-lg font-medium mb-2">${tripLocation} 날씨</div>`;
+      weatherData.days.forEach((day) => {
+        const date = new Date(day.datetime);
+        const options = { month: "short", day: "numeric", year: "numeric" };
+        const dateStr = date.toLocaleDateString("ko-KR", options);
+        const weatherHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-sun text-yellow-500 text-2xl"></i>
+              <div>
+                <p class="font-medium">${dateStr}</p>
+                <p class="text-sm text-gray-600">${day.conditions}</p>
+              </div>
+            </div>
+            <p class="text-lg font-medium">${Math.round(day.temp)}°C</p>
+          </div>
+        `;
+        // 수정: innerHTML에 백틱 사용
+        forecastContainer.innerHTML += weatherHTML;
+      });
+    })
+    .catch((error) => console.error("Error fetching weather data:", error));
+}
+
+// localStorage 업데이트 함수 (즉시 저장)
+function updateLocalStorage() {
+  if (window.tripData) {
+    localStorage.setItem("tripData", JSON.stringify(window.tripData));
+  }
+}
+
+// 타이틀 변경 (헤더 h1 편집)
+function enableEditableTitle() {
+  const headerTitle = document.querySelector("header h1");
+  if (headerTitle) {
+    headerTitle.contentEditable = "true";
+    headerTitle.style.cursor = "text";
+    headerTitle.addEventListener("blur", function () {
+      if (window.tripData) {
+        window.tripData.title = headerTitle.innerText;
+        updateLocalStorage();
+      }
+    });
+  }
+}
+
+// 여행 개요 수정 모달 열기 함수 (여행 장소를 나라와 도시로 분리)
+function openOverviewModal() {
+  const modal = document.getElementById("overview-modal");
+  if (!modal) return;
+  if (window.tripData && window.tripData.location) {
+    // 수정: 나라와 도시 입력 필드로 분리하여 기존 값을 채움
+    document.getElementById("overview-country").value =
+      window.tripData.location.country || "";
+    document.getElementById("overview-city").value =
+      window.tripData.location.city || "";
+    if (window.tripData.location.arrival_time) {
+      document.getElementById("overview-start-date").value =
+        window.tripData.location.arrival_time.split("T")[0];
+    }
+  }
+  document.getElementById("overview-travelers").value =
+    window.tripData.travelers || "1";
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  // 동적으로 Google Maps API 로드 후 Autocomplete 초기화
+  loadGoogleMapsApi(initializeLocationAutocomplete);
+}
+
+// 여행 개요 수정 모달 닫기 함수
+function closeOverviewModal() {
+  const modal = document.getElementById("overview-modal");
+  if (!modal) return;
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+
+// 여행 개요 모달 제출 처리
+function overviewModalSubmit(e) {
+  e.preventDefault();
+  const startDate = document.getElementById("overview-start-date").value;
+  const country = document.getElementById("overview-country").value;
+  const city = document.getElementById("overview-city").value;
+  const travelers = document.getElementById("overview-travelers").value;
+  if (window.tripData && window.tripData.location) {
+    window.tripData.location.arrival_time = startDate + "T00:00:00";
+    // 수정: 나라와 도시를 각각 저장하고, address는 "나라, 도시" 형식으로 구성
+    window.tripData.location.country = country;
+    window.tripData.location.city = city;
+    window.tripData.location.address =
+      country && city ? country + ", " + city : country || city;
+  }
+  window.tripData.travelers = travelers;
+  updateLocalStorage();
+  updateTripUI(window.tripData);
+  closeOverviewModal();
+}
+
+// Google Places Autocomplete 초기화 함수 (나라와 도시 입력 필드에 적용)
+function initializeLocationAutocomplete() {
+  // 초기화: 나라 입력 필드 (overview-country)
+  const countryInput = document.getElementById("overview-country");
+  if (countryInput) {
+    const countryAutocomplete = new google.maps.places.Autocomplete(
+      countryInput,
+      {
+        types: ["(regions)"],
+      }
+    );
+    countryAutocomplete.addListener("place_changed", function () {
+      const place = countryAutocomplete.getPlace();
+      if (place && place.address_components) {
+        const countryComp = place.address_components.find((comp) =>
+          comp.types.includes("country")
+        );
+        if (countryComp) {
+          // 사용자에게는 long_name(한글)을 보이지만, 영어 버전은 short_name 저장
+          countryInput.value = countryComp.long_name;
+          if (!window.tripData.location) window.tripData.location = {};
+          window.tripData.location.country = countryComp.long_name;
+          window.tripData.location.englishCountry = countryComp.short_name;
+        }
+      }
+    });
+  }
+  // 초기화: 도시 입력 필드 (overview-city)
+  const cityInput = document.getElementById("overview-city");
+  if (cityInput) {
+    const cityAutocomplete = new google.maps.places.Autocomplete(cityInput, {
+      types: ["(cities)"],
+    });
+    cityAutocomplete.addListener("place_changed", function () {
+      const place = cityAutocomplete.getPlace();
+      if (place && place.address_components) {
+        let cityName = "";
+        let englishCityName = "";
+        place.address_components.forEach((comp) => {
+          if (comp.types.includes("locality")) {
+            cityName = comp.long_name;
+            englishCityName = comp.short_name;
+          }
+        });
+        if (!cityName) {
+          place.address_components.forEach((comp) => {
+            if (comp.types.includes("administrative_area_level_1")) {
+              cityName = comp.long_name;
+              englishCityName = comp.short_name;
+            }
+          });
+        }
+        cityInput.value = cityName;
+        if (!window.tripData.location) window.tripData.location = {};
+        window.tripData.location.city = cityName;
+        window.tripData.location.englishCity = englishCityName;
+      }
+    });
+  }
+}
+
+// Google Maps API 동적 로드 함수 (API 키는 app.js의 GOOGLE_MAP_API 사용)
+function loadGoogleMapsApi(callback) {
+  const existingScript = document.getElementById("googleMaps");
+  if (!existingScript) {
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAP_API}&libraries=places`;
+    script.id = "googleMaps";
+    script.async = true;
+    script.defer = true;
+    script.onload = callback;
+    document.head.appendChild(script);
+  } else {
+    if (callback) callback();
+  }
+}
+
+// 새로운 함수: event-location 입력란에 Google Autocomplete 적용 (이벤트 모달)
+function initializeEventLocationAutocomplete() {
+  const input = document.getElementById("event-location");
+  if (!input) return;
+  const autocomplete = new google.maps.places.Autocomplete(input, {
+    types: ["geocode"],
+  });
+  autocomplete.addListener("place_changed", function () {
+    const place = autocomplete.getPlace();
+    if (place.formatted_address) {
+      input.value = place.formatted_address;
+    }
+  });
+}
+
+// 여행 개요 수정 모달을 "trip-overview" 영역 클릭 시 열도록 설정
+function enableEditableOverview() {
+  const overviewEl = document.getElementById("trip-overview");
+  if (overviewEl) {
+    overviewEl.style.cursor = "pointer";
+    overviewEl.addEventListener("click", openOverviewModal);
+  }
+}
+
+// Cloud Translation API를 사용하여 한글을 영어로 번역하는 함수
+// 수정: Google Cloud Translation API 사용, async 함수로 구현
+async function translateToEnglish(text) {
+  const url = `https://translation.googleapis.com/language/translate/v2?key=${TRANSLATION_API_KEY}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      q: text,
+      target: "en",
+      format: "text",
+    }),
+  });
+  const result = await response.json();
+  return result.data.translations[0].translatedText;
+}
+
+// 날씨 정보 받아오기 (async 함수로 수정)
+// 수정: 한글 도시명이 있으면 Cloud Translation API를 사용해 영어로 변환하여 날씨 API에 전달
+async function updateWeatherForecast(data) {
+  let tripLocation =
+    data.location.englishCity ||
+    data.location.city ||
+    data.location.englishCountry ||
+    data.location.country ||
+    "Tokyo";
+  if (/[\u3131-\u3163\uac00-\ud7a3]/.test(tripLocation)) {
+    try {
+      tripLocation = await translateToEnglish(tripLocation);
+    } catch (error) {
+      console.error("Translation error:", error);
+    }
+  }
+  const today = new Date();
+  const startDate = today.toISOString().split("T")[0];
+  const endDate = new Date(today);
+  endDate.setDate(endDate.getDate() + 2);
+  const endDateStr = endDate.toISOString().split("T")[0];
+  // 수정: URL을 백틱(``)으로 올바른 템플릿 문자열로 작성
+  const weatherApiUrl = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(
+    tripLocation
+  )}/${startDate}/${endDateStr}?unitGroup=metric&lang=ko&key=${WEATHER_API_KEY}&contentType=json`;
+  console.log("Weather API URL:", weatherApiUrl);
+  fetch(weatherApiUrl)
+    .then((response) => response.json())
+    .then((weatherData) => {
+      const forecastContainer = document.querySelector(".weather-forecast");
+      if (!forecastContainer) return;
+      forecastContainer.innerHTML = `<div class="text-lg font-medium mb-2">${tripLocation} 날씨</div>`;
+      weatherData.days.forEach((day) => {
+        const date = new Date(day.datetime);
+        const options = { month: "short", day: "numeric", year: "numeric" };
+        const dateStr = date.toLocaleDateString("ko-KR", options);
+        const weatherHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-sun text-yellow-500 text-2xl"></i>
+              <div>
+                <p class="font-medium">${dateStr}</p>
+                <p class="text-sm text-gray-600">${day.conditions}</p>
+              </div>
+            </div>
+            <p class="text-lg font-medium">${Math.round(day.temp)}°C</p>
+          </div>
+        `;
+        // 수정: innerHTML에 백틱 사용
+        forecastContainer.innerHTML += weatherHTML;
+      });
+    })
+    .catch((error) => console.error("Error fetching weather data:", error));
+}
+
+// localStorage 업데이트 함수 (즉시 저장)
+function updateLocalStorage() {
+  if (window.tripData) {
+    localStorage.setItem("tripData", JSON.stringify(window.tripData));
+  }
+}
+
+// 타이틀 변경 (헤더 h1 편집)
+function enableEditableTitle() {
+  const headerTitle = document.querySelector("header h1");
+  if (headerTitle) {
+    headerTitle.contentEditable = "true";
+    headerTitle.style.cursor = "text";
+    headerTitle.addEventListener("blur", function () {
+      if (window.tripData) {
+        window.tripData.title = headerTitle.innerText;
+        updateLocalStorage();
+      }
+    });
+  }
+}
+
+// 여행 개요 수정 모달 열기 함수 (여행 장소를 나라와 도시로 분리)
+function openOverviewModal() {
+  const modal = document.getElementById("overview-modal");
+  if (!modal) return;
+  if (window.tripData && window.tripData.location) {
+    // 수정: 나라와 도시 입력 필드로 분리하여 기존 값을 채움
+    document.getElementById("overview-country").value =
+      window.tripData.location.country || "";
+    document.getElementById("overview-city").value =
+      window.tripData.location.city || "";
+    if (window.tripData.location.arrival_time) {
+      document.getElementById("overview-start-date").value =
+        window.tripData.location.arrival_time.split("T")[0];
+    }
+  }
+  document.getElementById("overview-travelers").value =
+    window.tripData.travelers || "1";
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  // 동적으로 Google Maps API 로드 후 Autocomplete 초기화
+  loadGoogleMapsApi(initializeLocationAutocomplete);
+}
+
+// 여행 개요 수정 모달 닫기 함수
+function closeOverviewModal() {
+  const modal = document.getElementById("overview-modal");
+  if (!modal) return;
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+
+// 여행 개요 모달 제출 처리
+function overviewModalSubmit(e) {
+  e.preventDefault();
+  const startDate = document.getElementById("overview-start-date").value;
+  const country = document.getElementById("overview-country").value;
+  const city = document.getElementById("overview-city").value;
+  const travelers = document.getElementById("overview-travelers").value;
+  if (window.tripData && window.tripData.location) {
+    window.tripData.location.arrival_time = startDate + "T00:00:00";
+    // 수정: 나라와 도시를 각각 저장하고, address는 "나라, 도시" 형식으로 구성
+    window.tripData.location.country = country;
+    window.tripData.location.city = city;
+    window.tripData.location.address =
+      country && city ? country + ", " + city : country || city;
+  }
+  window.tripData.travelers = travelers;
+  updateLocalStorage();
+  updateTripUI(window.tripData);
+  closeOverviewModal();
+}
+
+// Google Places Autocomplete 초기화 함수 (나라와 도시 입력 필드에 적용)
+function initializeLocationAutocomplete() {
+  // 초기화: 나라 입력 필드 (overview-country)
+  const countryInput = document.getElementById("overview-country");
+  if (countryInput) {
+    const countryAutocomplete = new google.maps.places.Autocomplete(
+      countryInput,
+      {
+        types: ["(regions)"],
+      }
+    );
+    countryAutocomplete.addListener("place_changed", function () {
+      const place = countryAutocomplete.getPlace();
+      if (place && place.address_components) {
+        const countryComp = place.address_components.find((comp) =>
+          comp.types.includes("country")
+        );
+        if (countryComp) {
+          // 사용자에게는 long_name(한글)을 보이지만, 영어 버전은 short_name 저장
+          countryInput.value = countryComp.long_name;
+          if (!window.tripData.location) window.tripData.location = {};
+          window.tripData.location.country = countryComp.long_name;
+          window.tripData.location.englishCountry = countryComp.short_name;
+        }
+      }
+    });
+  }
+  // 초기화: 도시 입력 필드 (overview-city)
+  const cityInput = document.getElementById("overview-city");
+  if (cityInput) {
+    const cityAutocomplete = new google.maps.places.Autocomplete(cityInput, {
+      types: ["(cities)"],
+    });
+    cityAutocomplete.addListener("place_changed", function () {
+      const place = cityAutocomplete.getPlace();
+      if (place && place.address_components) {
+        let cityName = "";
+        let englishCityName = "";
+        place.address_components.forEach((comp) => {
+          if (comp.types.includes("locality")) {
+            cityName = comp.long_name;
+            englishCityName = comp.short_name;
+          }
+        });
+        if (!cityName) {
+          place.address_components.forEach((comp) => {
+            if (comp.types.includes("administrative_area_level_1")) {
+              cityName = comp.long_name;
+              englishCityName = comp.short_name;
+            }
+          });
+        }
+        cityInput.value = cityName;
+        if (!window.tripData.location) window.tripData.location = {};
+        window.tripData.location.city = cityName;
+        window.tripData.location.englishCity = englishCityName;
+      }
+    });
+  }
+}
+
+// Google Maps API 동적 로드 함수 (API 키는 app.js의 GOOGLE_MAP_API 사용)
+function loadGoogleMapsApi(callback) {
+  const existingScript = document.getElementById("googleMaps");
+  if (!existingScript) {
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAP_API}&libraries=places`;
+    script.id = "googleMaps";
+    script.async = true;
+    script.defer = true;
+    script.onload = callback;
+    document.head.appendChild(script);
+  } else {
+    if (callback) callback();
+  }
+}
+
+// 새로운 함수: event-location 입력란에 Google Autocomplete 적용 (이벤트 모달)
+function initializeEventLocationAutocomplete() {
+  const input = document.getElementById("event-location");
+  if (!input) return;
+  const autocomplete = new google.maps.places.Autocomplete(input, {
+    types: ["geocode"],
+  });
+  autocomplete.addListener("place_changed", function () {
+    const place = autocomplete.getPlace();
+    if (place.formatted_address) {
+      input.value = place.formatted_address;
+    }
+  });
+}
+
+// 새로운 함수: 이벤트 모달의 "Day" select 옵션을 업데이트 (현재 존재하는 day 번호 목록 채우기)
+function updateEventDayOptions() {
+  const select = document.getElementById("event-day");
+  if (!select) return;
+  // 기존 옵션 모두 삭제
+  select.innerHTML = "";
+  // 1부터 totalDays까지 옵션 추가
+  for (let i = 1; i <= totalDays; i++) {
+    const option = document.createElement("option");
+    option.value = i;
+    option.text = "Day " + i;
+    select.appendChild(option);
+  }
 }
 
 // 여행 개요 수정 모달을 "trip-overview" 영역 클릭 시 열도록 설정
@@ -878,6 +1763,7 @@ function updateTripUI(data) {
   showDayContent(1);
   window.tripData = data;
   updateTripOverview(data);
+  // 수정: updateWeatherForecast를 async로 호출 (여기서는 .then() 사용)
   updateWeatherForecast(data);
   enableEditableOverview();
 }
