@@ -5,21 +5,21 @@ document.addEventListener("DOMContentLoaded", function () {
             title: "도쿄 로컬 카페 탐방",
             date: "2024년 2월 15일",
             location: "도쿄, 일본",
-            imgSrc: "../images/japan.jpeg",
+            imgSrc: "https://raw.githubusercontent.com/aboha-ai/frontend/refs/heads/soowan_vlog/public/images/japan.jpeg",
             link: "#"
         },
         {
             title: "파리의 아름다운 봄",
             date: "2024년 1월 20일",
             location: "파리, 프랑스",
-            imgSrc: "../images/paris.jpeg",
+            imgSrc: "https://raw.githubusercontent.com/aboha-ai/frontend/refs/heads/soowan_vlog/public/images/paris.jpeg",
             link: "#"
         },
         {
             title: "방콕 길거리",
             date: "2023년 12월 5일",
             location: "LA, 미국",
-            imgSrc: "../images/usa.jpeg",
+            imgSrc: "https://raw.githubusercontent.com/aboha-ai/frontend/refs/heads/soowan_vlog/public/images/usa.jpeg",
             link: "#"
         }
     ];
@@ -30,21 +30,21 @@ document.addEventListener("DOMContentLoaded", function () {
             title: "주말 서울 나들이",
             date: "2024년 2월 10일",
             location: "서울, 한국",
-            imgSrc: "../images/seoul.jpeg",
+            imgSrc: "https://raw.githubusercontent.com/aboha-ai/frontend/refs/heads/soowan_vlog/public/images/seoul.jpeg",
             link: "#"
         },
         {
             title: "제주도 힐링 여행",
             date: "2024년 1월 5일",
             location: "제주도, 한국",
-            imgSrc: "../images/jeju.jpeg",
+            imgSrc: "https://raw.githubusercontent.com/aboha-ai/frontend/refs/heads/soowan_vlog/public/images/jeju.jpeg",
             link: "#"
         },
         {
             title: "부산 투어",
             date: "2023년 12월 15일",
             location: "부산, 한국",
-            imgSrc: "../images/busan.jpeg",
+            imgSrc: "https://raw.githubusercontent.com/aboha-ai/frontend/refs/heads/soowan_vlog/public/images/busan.jpeg",
             link: "#"
         }
     ];
