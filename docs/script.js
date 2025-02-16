@@ -1,20 +1,23 @@
-// script.js (index.html)
-
-let selectedThemes = []; // 선택된 테마 저장
-let selectedDestinations = []; // 선택된 여행지 ID 저장 배열
+// 선택된 테마를 카테고리별로 저장할 객체
+let selectedThemes = {
+  accommodation: [], // 숙소
+  food: [], // 맛집
+  attractions: [], // 관광지
+};
 
 // 페이지 로드 시: 이벤트 리스너 등록
 document.addEventListener("DOMContentLoaded", () => {
+  // 저장된 테마 불러오기 (페이지 로드 시)
+  const savedThemes = localStorage.getItem("selectedThemes");
+  if (savedThemes) {
+    selectedThemes = JSON.parse(savedThemes);
+  }
+
   initializeThemeButtons();
 
   const searchButton = document.getElementById("searchButton");
   if (searchButton) {
     searchButton.addEventListener("click", openThemeModal);
-  }
-
-  const selectThemesButton = document.getElementById("selectThemesButton");
-  if (selectThemesButton) {
-    selectThemesButton.addEventListener("click", getTravelDestinations);
   }
 
   const closeModalButton = document.getElementById("closeModalButton");
@@ -26,270 +29,149 @@ document.addEventListener("DOMContentLoaded", () => {
   if (resetButton) {
     resetButton.addEventListener("click", resetLocalStorage);
   }
+
+  // "나의 여행 기록 보기" 버튼 클릭 이벤트 (임시)
+  const viewVlogsButton = document.getElementById("viewVlogsButton");
+  if (viewVlogsButton) {
+    viewVlogsButton.addEventListener("click", () => {
+      console.log("나의 여행 기록 보기 버튼 클릭 (임시)");
+    });
+  }
+
+  // "새 기록 작성" 버튼 클릭 이벤트 (임시)
+  const openVlogModalButton = document.getElementById("openVlogModalButton");
+  if (openVlogModalButton) {
+    openVlogModalButton.addEventListener("click", () => {
+      console.log("새 기록 작성 버튼 클릭 (임시)");
+    });
+  }
+
+  // "여행 팁 보러가기" 버튼 클릭 이벤트 (모달 내부)
+  const tipsButton = document.getElementById("tipsButton");
+  if (tipsButton) {
+    tipsButton.addEventListener("click", () => {
+      sendDataAndRedirect("/travel-tips.html");
+    });
+  }
+
+  // "일정 짜주기" 버튼 클릭 이벤트 (모달 내부)
+  const itineraryButton = document.getElementById("itineraryButton");
+  if (itineraryButton) {
+    itineraryButton.addEventListener("click", () => {
+      sendDataAndRedirect("/itinerary.html");
+    });
+  }
 });
 
 // 로컬 스토리지 초기화
 function resetLocalStorage() {
   localStorage.clear();
   alert("로컬 스토리지 데이터가 초기화되었습니다.");
-  selectedThemes = [];
-  selectedDestinations = []; // 선택된 여행지 초기화
+  selectedThemes = {
+    accommodation: [],
+    food: [],
+    attractions: [],
+  };
   initializeThemeButtons();
-  document.getElementById("destinationList").innerHTML = "";
-  document.getElementById("destinationResults").classList.add("hidden");
 }
 
-// 테마 선택 모달 관련 함수들 (기존 코드와 동일)
+// 테마 선택 모달 관련 함수들
 function openThemeModal() {
+  const cityInput = document.getElementById("cityInput").value;
+  if (!cityInput) {
+    alert("도시와 나라를 입력해주세요.");
+    return;
+  }
+  // 쉼표로 도시와 나라 분리
+  const [city, country] = cityInput.split(",").map((part) => part.trim());
+
+  if (!city || !country) {
+    alert("도시와 나라를 쉼표(,)로 구분하여 입력해주세요 예시)서울,대한민국");
+    return;
+  }
+
+  document.getElementById(
+    "modal-title"
+  ).textContent = `여행 테마 선택 - ${cityInput}`; // 모달 제목 변경
   document.getElementById("themeModal").classList.remove("hidden");
 }
 
+// "취소" 버튼을 눌러서 모달을 닫을 때,  *아무것도 저장 안함*.
 function closeThemeModal() {
   document.getElementById("themeModal").classList.add("hidden");
 }
 
+// 테마 버튼 초기화 및 이벤트 핸들러 연결
 function initializeThemeButtons() {
-  const themeButtons = document.querySelectorAll("#themeTags button");
+  const themeButtons = document.querySelectorAll(".theme-button"); // 클래스 선택자 사용
   themeButtons.forEach((button) => {
-    button.removeEventListener("click", buttonClickHandler);
-    button.addEventListener("click", buttonClickHandler);
+    button.removeEventListener("click", handleThemeButtonClick);
+    button.addEventListener("click", handleThemeButtonClick);
 
-    const savedThemes = localStorage.getItem("selectedThemes");
-    if (savedThemes) {
-      selectedThemes = JSON.parse(savedThemes);
-    }
+    const category = button.dataset.category; // data-category 속성 값 (accommodation, food, attractions)
+    const theme = button.textContent.trim().substring(1); // '#' 제거 후, 앞뒤 공백 제거
 
-    const theme = button.innerText;
-    if (selectedThemes.includes(theme)) {
-      button.classList.add("bg-blue-200");
+    // 저장된 테마에 따라 버튼 스타일 초기화
+    if (selectedThemes[category]?.includes(theme)) {
+      button.classList.add("bg-blue-500", "text-white");
+      button.classList.remove("bg-blue-100", "text-blue-800");
     } else {
-      button.classList.remove("bg-blue-200");
+      button.classList.remove("bg-blue-500", "text-white");
+      button.classList.add("bg-blue-100", "text-blue-800");
     }
   });
 }
 
-function buttonClickHandler(event) {
-  toggleTheme(event.currentTarget);
-}
+// 테마 버튼 클릭 핸들러: 선택/해제 시, 스타일(클래스) 변경 및 selectedThemes 객체 업데이트
+function handleThemeButtonClick(event) {
+  const button = event.currentTarget;
+  const category = button.dataset.category; // data-category 속성 값
+  const theme = button.textContent.trim().substring(1); // '#' 제거, 앞뒤 공백 제거
 
-function toggleTheme(button) {
-  const theme = button.innerText;
-  if (selectedThemes.includes(theme)) {
-    selectedThemes = selectedThemes.filter((item) => item !== theme);
-    button.classList.remove("bg-blue-200");
+  if (selectedThemes[category].includes(theme)) {
+    // 이미 선택된 테마 -> 제거
+    selectedThemes[category] = selectedThemes[category].filter(
+      (t) => t !== theme
+    );
+    button.classList.remove("bg-blue-500", "text-white");
+    button.classList.add("bg-blue-100", "text-blue-800"); // 선택 해제 시 스타일
   } else {
-    selectedThemes.push(theme);
-    button.classList.add("bg-blue-200");
+    // 선택되지 않은 테마 -> 추가
+    selectedThemes[category].push(theme);
+    button.classList.add("bg-blue-500", "text-white"); // 선택 시 스타일
+    button.classList.remove("bg-blue-100", "text-blue-800");
   }
 
+  // localStorage에 변경된 selectedThemes 객체 저장
   localStorage.setItem("selectedThemes", JSON.stringify(selectedThemes));
-}
-
-// 여행지 정보 가져오기 (Places API 사용)
-async function getTravelDestinations() {
-  closeThemeModal();
-  const city = document.getElementById("cityInput").value;
-
-  if (!city) {
-    alert("도시를 입력해주세요.");
-    return;
-  }
-
-  if (selectedThemes.length === 0) {
-    alert("여행 테마를 하나 이상 선택해주세요.");
-    openThemeModal();
-    return;
-  }
-
-  const storageKey = `travelDestinations_${city}`;
-  const lastApiCallKey = `lastApiCallTimestamp_${city}`;
-  const lastApiCall = localStorage.getItem(lastApiCallKey);
-  const now = Date.now();
-  const twentyFourHours = 24 * 60 * 60 * 1000;
-
-  if (!lastApiCall || now - lastApiCall > twentyFourHours) {
-    // ... (API 호출 로직은 이전과 동일) ...
-    localStorage.removeItem(storageKey);
-    localStorage.removeItem(lastApiCallKey);
-
-    try {
-      //  PlacesService에 빈 div를 전달.
-      const service = new google.maps.places.PlacesService(
-        document.createElement("div")
-      );
-      const request = {
-        query: `${city} ${selectedThemes.join(" ")}`, // 검색어 (도시 + 테마)
-      };
-
-      service.textSearch(request, (results, status) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK) {
-          console.log("Places API results:", results);
-          const destinations = results.map((place) => ({
-            id: place.place_id,
-            name: place.name,
-            description: place.formatted_address,
-          }));
-
-          localStorage.setItem(storageKey, JSON.stringify(destinations));
-          localStorage.setItem(lastApiCallKey, now.toString());
-          displayDestinations(destinations, city); // 체크박스와 함께 표시
-          document
-            .getElementById("destinationResults")
-            .classList.remove("hidden");
-        } else {
-          console.error("Places API error:", status);
-          alert("Places API 호출 오류: " + status);
-        }
-      });
-    } catch (error) {
-      console.error("API 호출 오류:", error);
-      alert(`API 호출 오류: ${error.message}`);
-    }
-  } else {
-    const cachedDestinations = localStorage.getItem(storageKey);
-    if (cachedDestinations) {
-      const destinations = JSON.parse(cachedDestinations);
-      displayDestinations(destinations, city); // 체크박스와 함께 표시
-      document.getElementById("destinationResults").classList.remove("hidden");
-      console.log(`Using cached data for ${city} from localStorage`);
-    } else {
-      // 로컬 스토리지에 해당 도시 데이터가 없을 때  API 호출
-      localStorage.removeItem(storageKey);
-      localStorage.removeItem(lastApiCallKey);
-      try {
-        //  PlacesService에 빈 div 전달
-        const service = new google.maps.places.PlacesService(
-          document.createElement("div")
-        );
-        const request = {
-          query: `${city} ${selectedThemes.join(" ")}`,
-        };
-
-        service.textSearch(request, (results, status) => {
-          if (status === google.maps.places.PlacesServiceStatus.OK) {
-            console.log("Places API results:", results);
-            const destinations = results.map((place) => ({
-              id: place.place_id,
-              name: place.name,
-              description: place.formatted_address,
-            }));
-
-            localStorage.setItem(storageKey, JSON.stringify(destinations));
-            localStorage.setItem(lastApiCallKey, now.toString());
-            displayDestinations(destinations, city);
-            document
-              .getElementById("destinationResults")
-              .classList.remove("hidden");
-          } else {
-            console.error("Places API error:", status);
-            alert("Places API 호출 오류: " + status);
-          }
-        });
-      } catch (error) {
-        console.error("API 호출 오류:", error);
-        alert(`API 호출 오류: ${error.message}`);
-      }
-    }
-  }
-}
-
-// 여행지 목록 표시 (체크박스, 버튼 포함)
-function displayDestinations(destinations, city) {
-  const destinationListContainer = document.getElementById("destinationList");
-  destinationListContainer.innerHTML = ""; // 기존 목록 지우기
-
-  const cityTitle = document.createElement("h3");
-  cityTitle.className = "text-xl font-bold text-gray-800 mb-4";
-  cityTitle.textContent = `${city} 추천 여행지`;
-  destinationListContainer.appendChild(cityTitle);
-
-  const checkboxContainer = document.createElement("div");
-  checkboxContainer.className = "mb-4";
-
-  if (destinations && destinations.length > 0) {
-    destinations.forEach((destination) => {
-      const checkboxItem = document.createElement("div");
-      checkboxItem.className = "flex items-center mb-2";
-
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.id = `checkbox-${destination.id}`;
-      checkbox.value = destination.id;
-      checkbox.className = "mr-2";
-      checkbox.dataset.destinationId = destination.id; //  데이터 속성
-
-      checkbox.addEventListener("change", (event) => {
-        if (event.target.checked) {
-          selectedDestinations.push(destination.id);
-        } else {
-          selectedDestinations = selectedDestinations.filter(
-            (id) => id !== destination.id
-          );
-        }
-        console.log("Selected destinations:", selectedDestinations);
-      });
-
-      const label = document.createElement("label");
-      label.htmlFor = `checkbox-${destination.id}`;
-      label.className = "flex-grow";
-      label.innerHTML = `<span class="font-semibold">${destination.name}</span> - <span class="text-gray-600">${destination.description}</span>`;
-
-      checkboxItem.appendChild(checkbox);
-      checkboxItem.appendChild(label);
-      checkboxContainer.appendChild(checkboxItem);
-    });
-  } else {
-    checkboxContainer.innerHTML = "<p>추천 여행지를 찾을 수 없습니다.</p>";
-  }
-
-  destinationListContainer.appendChild(checkboxContainer);
-
-  // 버튼 컨테이너
-  const destinationButtonsDiv = document.getElementById("destinationButtons");
-  destinationButtonsDiv.innerHTML = ""; // 기존 내용 지우기
-
-  // "여행 팁 보러가기" 버튼
-  const tipsButton = document.createElement("button");
-  tipsButton.textContent = "여행 팁 보러가기";
-  tipsButton.className =
-    "px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none mr-2";
-  tipsButton.addEventListener("click", () =>
-    sendDataAndRedirect("./travel-tips.html")
-  ); // 클릭 이벤트 핸들러
-  destinationButtonsDiv.appendChild(tipsButton);
-
-  // "일정 짜주기" 버튼
-  const itineraryButton = document.createElement("button");
-  itineraryButton.textContent = "일정 짜주기";
-  itineraryButton.className =
-    "px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none";
-  itineraryButton.addEventListener("click", () =>
-    sendDataAndRedirect("./itinerary.html")
-  ); // 클릭 이벤트 핸들러
-  destinationButtonsDiv.appendChild(itineraryButton);
 }
 
 // 데이터를 다른 페이지로 전송하고 리디렉션하는 함수
 function sendDataAndRedirect(redirectUrl) {
-  const city = document.getElementById("cityInput").value;
-  const storageKey = `travelDestinations_${city}`;
-  const allDestinations = JSON.parse(localStorage.getItem(storageKey)) || [];
+  const cityInput = document.getElementById("cityInput").value;
 
-  // 체크된 여행지 정보만 필터링
-  const checkedDestinations = allDestinations.filter((dest) =>
-    selectedDestinations.includes(dest.id)
-  );
-
-  if (checkedDestinations.length === 0) {
-    alert("여행지를 선택해주세요.");
+  if (!cityInput) {
+    alert("도시와 나라를 입력해주세요.");
     return;
   }
 
-  // 전송할 데이터 객체 생성
+  const [city, country] = cityInput.split(",").map((part) => part.trim());
+
+  if (!city || !country) {
+    alert("도시와 나라를 쉼표(,)로 구분하여 입력해주세요 예시)서울,대한민국");
+    return;
+  }
+
+  //  localStorage에, city와 country를 저장.
+  localStorage.setItem("selectedCity", city);
+  localStorage.setItem("selectedCountry", country);
+
+  // 전송할 데이터 객체 생성 (선택된 도시와 테마)
   const dataToSend = {
-    city: city,
-    themes: selectedThemes,
-    destinations: checkedDestinations, // 체크된 여행지 정보
+    selectedCity: city, // 도시 이름
+    selectedCountry: country, // 나라 이름
+    selectedThemes: selectedThemes, // 카테고리별 테마 객체
+    destinations: [], // 빈 배열 (index.html에서는 destinations 정보 사용 안 함)
   };
 
   // 데이터를 로컬 스토리지에 임시 저장 (페이지 이동 시 데이터 유지)
