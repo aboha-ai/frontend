@@ -1,33 +1,25 @@
 <!DOCTYPE html>
 <html lang="ko">
-    <head>
-        <meta charset="UTF-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <title>나의 여행 기록 | 아보하 여행</title> <!-- 동적 제목 삽입 -->
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
-        <!-- Tailwind CSS를 먼저 로드 -->
-        <link href="https://ai-public.creatie.ai/gen_page/tailwind-custom.css" rel="stylesheet"/>
-        <!-- Tailwind JS는 그 후에 로드 -->
-        <script src="https://cdn.tailwindcss.com/3.4.5?plugins=forms@0.5.7,typography@0.5.13,aspect-ratio@0.4.2,container-queries@0.1.1"></script>
-        <script src="https://ai-public.creatie.ai/gen_page/tailwind-config.min.js" data-color="#000000" data-border-radius="small"></script>
-        
-    </head>
-    
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>나의 여행 기록 | 아보하 여행</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <link href="https://ai-public.creatie.ai/gen_page/tailwind-custom.css" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com/3.4.5?plugins=forms@0.5.7,typography@0.5.13,aspect-ratio@0.4.2,container-queries@0.1.1"></script>
+    <script src="https://ai-public.creatie.ai/gen_page/tailwind-config.min.js" data-color="#000000" data-border-radius="small"></script>
+</head>
+<body class="min-h-screen flex flex-col bg-gray-50 font-sans">
 
-    <body class="bg-gray-50 font-sans">
-        <div data-include-path="./navber.html"></div>
-        
-        <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- 여행 기록 섹션 -->
+    <div data-include-path="./navber.html"></div>
+
+    <main class="flex-grow">  <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900">나의 여행 기록</h1> <!-- 동적 제목 삽입 -->
-                <p class="mt-2 text-gray-600">내가 작성한 모든 여행 이야기</p> <!-- 동적 설명 삽입 -->
-                
+                <h1 class="text-3xl font-bold text-gray-900">나의 여행 기록</h1>
+                <p class="mt-2 text-gray-600">내가 작성한 모든 여행 이야기</p>
                 <div id="travel-records" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-                    <!-- 여행 데이터 반복 -->
-                </div>
-
+                    </div>
                 <div class="flex justify-between mt-4">
                     <div class="flex justify-between items-center w-full">
                         <div class="flex space-x-2">
@@ -42,19 +34,15 @@
                         <button id="open-modal-btn" class="!rounded-button bg-custom text-white px-6 py-3 flex items-center">
                             새 여행 기록 작성하기<i class="fas fa-plus-circle ml-2"></i>
                         </button>
-                        
                     </div>
                 </div>
             </div>
 
-            <!-- 일정 기록 섹션 -->
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-900">나의 일정 기록</h1>
                 <p class="mt-2 text-gray-600">내가 작성한 모든 일정 이야기</p>
                 <div id="schedule-records" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-                    <!-- 일정 데이터 반복 -->
-                </div>
-
+                    </div>
                 <div class="flex justify-between mt-4">
                     <div class="flex justify-between items-center w-full">
                         <div class="flex space-x-2">
@@ -73,10 +61,11 @@
                 </div>
             </div>
         </div>
-        <div data-include-path="./modal.html"></div>
-        <div data-include-path="./footer.html"></div>
+    </main>
 
-        <script src="../js/record.js"></script>  <script src="../js/modal.js"></script>
-    </body>
-
+    <div data-include-path="./modal.html"></div>
+    <div data-include-path="./footer.html"></div>
+    <script src="../js/record.js"></script>
+    <script src="../js/modal.js"></script>
+</body>
 </html>

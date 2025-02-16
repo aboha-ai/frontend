@@ -5,21 +5,21 @@ document.addEventListener("DOMContentLoaded", function () {
             title: "도쿄 로컬 카페 탐방",
             date: "2024년 2월 15일",
             location: "도쿄, 일본",
-            imgSrc: "https://ai-public.creatie.ai/gen_page/travel_tokyo.jpg",
+            imgSrc: "../images/japan.jpeg",
             link: "#"
         },
         {
             title: "파리의 아름다운 봄",
             date: "2024년 1월 20일",
             location: "파리, 프랑스",
-            imgSrc: "https://ai-public.creatie.ai/gen_page/travel_paris.jpg",
+            imgSrc: "../images/paris.jpeg",
             link: "#"
         },
         {
-            title: "방콕 길거리 음식 탐방",
+            title: "방콕 길거리",
             date: "2023년 12월 5일",
-            location: "방콕, 태국",
-            imgSrc: "https://ai-public.creatie.ai/gen_page/travel_bangkok.jpg",
+            location: "LA, 미국",
+            imgSrc: "../images/usa.jpeg",
             link: "#"
         }
     ];
@@ -30,21 +30,21 @@ document.addEventListener("DOMContentLoaded", function () {
             title: "주말 서울 나들이",
             date: "2024년 2월 10일",
             location: "서울, 한국",
-            imgSrc: "https://ai-public.creatie.ai/gen_page/schedule_1.jpg",
+            imgSrc: "../images/seoul.jpeg",
             link: "#"
         },
         {
             title: "제주도 힐링 여행",
             date: "2024년 1월 5일",
             location: "제주도, 한국",
-            imgSrc: "https://ai-public.creatie.ai/gen_page/schedule_2.jpg",
+            imgSrc: "../images/jeju.jpeg",
             link: "#"
         },
         {
-            title: "부산 맛집 투어",
+            title: "부산 투어",
             date: "2023년 12월 15일",
             location: "부산, 한국",
-            imgSrc: "https://ai-public.creatie.ai/gen_page/schedule_3.jpg",
+            imgSrc: "../images/busan.jpeg",
             link: "#"
         }
     ];
