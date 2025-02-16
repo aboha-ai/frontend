@@ -2,11 +2,21 @@ document.addEventListener("DOMContentLoaded", function () {
   const scheduleContainer = document.getElementById("scheduleContainer");
 
   /**
-   * ✅ 기존 일정 유지하면서 새로운 일정 추가
+   * ✅ 기존 일정 유지하면서 새로운 일정 추가 (중복 방지)
    */
   function appendSelectedTrip(trip) {
+    // 중복 일정 추가 방지
+    let existingTrip = document.querySelector(
+      `.trip-section[data-trip="${trip.title}"]`
+    );
+    if (existingTrip) {
+      alert("이미 추가된 일정입니다!");
+      return;
+    }
+
     let tripSection = document.createElement("div");
     tripSection.classList.add("trip-section");
+    tripSection.setAttribute("data-trip", trip.title);
     tripSection.innerHTML = `<h3>${trip.title} (${trip.location.city}, ${trip.location.country})</h3>`;
 
     trip.itinerary.forEach((day) => {
@@ -14,7 +24,6 @@ document.addEventListener("DOMContentLoaded", function () {
       daySection.classList.add("day-section");
       daySection.innerHTML = `<h3>📅 Day ${day.day} - ${day.date}</h3>`;
 
-      // ✅ 일정들을 가로 정렬하는 event-container 추가
       let eventContainer = document.createElement("div");
       eventContainer.classList.add("event-container");
 
@@ -29,33 +38,21 @@ document.addEventListener("DOMContentLoaded", function () {
                 </button>
               `;
 
-        eventContainer.appendChild(eventItem); // ✅ event-container에 추가
+        eventContainer.appendChild(eventItem);
       });
 
-      daySection.appendChild(eventContainer); // ✅ 가로 정렬 컨테이너 추가
+      daySection.appendChild(eventContainer);
       tripSection.appendChild(daySection);
     });
 
-    scheduleContainer.appendChild(tripSection); // ✅ 기존 일정 유지하면서 새로운 일정 추가
+    scheduleContainer.appendChild(tripSection);
 
-    // ✅ 여행 팁 섹션 추가
-    addTravelTipsSection();
-  }
-
-  /**
-   * ✅ 여행 팁 & FAQ 섹션 추가 (일정이 추가된 후에만 생성)
-   */
-  function addTravelTipsSection() {
-    let tipsContainer = document.getElementById("tipsContainer");
-
-    if (!tipsContainer) {
+    // ✅ 여행 팁 섹션 추가 (중복 방지)
+    if (!document.querySelector(".trip-tips")) {
       const mainContainer = document.querySelector(".container");
       const tipsSection = document.createElement("section");
       tipsSection.classList.add("trip-tips");
-      tipsSection.innerHTML = `
-              <h2>여행 팁</h2>
-              <div id="tipsContainer" class="carousel"></div>
-            `;
+      tipsSection.innerHTML = `<h2>여행 팁</h2><div id="tipsContainer" class="carousel"></div>`;
       mainContainer.appendChild(tipsSection);
     }
   }
@@ -66,13 +63,12 @@ document.addEventListener("DOMContentLoaded", function () {
   document.addEventListener("click", function (event) {
     if (event.target.classList.contains("get-tips")) {
       const placeName = event.target.dataset.place;
-
       if (typeof window.getTipsForPlace === "function") {
-        window.getTipsForPlace(placeName); // ✅ Gemini API 호출
+        window.getTipsForPlace(placeName);
       }
     }
   });
 
-  // ✅ 일정 선택 시 `modal.js`에서 이 함수가 호출됨
+  // ✅ `modal.js`에서 이 함수 실행
   window.appendSelectedTrip = appendSelectedTrip;
 });

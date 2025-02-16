@@ -1,102 +1,60 @@
-/* ✅ 여행 팁 섹션 스타일 */
-.trip-tips {
-  margin-top: 20px;
-  padding: 15px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-  overflow: hidden; /* ✅ 부모 컨테이너에서 팁이 잘리지 않도록 설정 */
-  display: none; /* ✅ 기본적으로 숨김 */
-}
-
-/* ✅ 팁이 추가되면 보이도록 설정 */
-.trip-tips.active {
-  display: block;
-}
-
-/* ✅ 여행 팁 제목 스타일 */
-.trip-tips h2 {
-  font-size: 1.5rem;
-  color: #333;
-  margin-bottom: 10px;
-}
-
-/* ✅ 팁 컨테이너 스타일 */
+/* ✅ 팁 캐러셀 컨테이너 */
 #tipsContainer {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
   display: flex;
-  overflow-x: auto;
-  padding: 10px;
-  gap: 15px;
-  scroll-behavior: smooth;
+  justify-content: center;
 }
 
-/* ✅ 팁 박스 스타일 */
-.tip-box {
+/* ✅ 팁 슬라이드 트랙 */
+.tips-track {
+  display: flex;
+  flex-wrap: nowrap;
+  transition: transform 0.5s ease-in-out;
+  width: max-content;
+  white-space: nowrap;
+  justify-content: flex-start;
+}
+
+/* ✅ 개별 팁 카드 */
+.tip-slide {
   background-color: white;
   padding: 15px;
   border-radius: 8px;
   box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-  width: 280px; /* ✅ 크기 고정 */
+  width: 300px;
   flex-shrink: 0;
+  margin-right: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
-.tip-box h3 {
-  font-size: 1.2rem;
-  color: #007bff;
-  margin-bottom: 5px;
-}
-
-.tip-box ul {
-  padding-left: 15px;
-}
-
-.tip-box li {
-  font-size: 0.9rem;
-  color: #555;
-  margin-bottom: 5px;
-}
-
-/* ✅ 회화 표현 스타일 */
-.tip-box h4 {
-  font-size: 1rem;
-  margin-top: 10px;
-  color: #28a745;
-}
-
-.tip-box p {
-  font-size: 0.9rem;
-  color: #333;
-  margin-bottom: 10px;
-}
-
-/* ✅ 버튼 스타일 */
-.save-btn {
-  background-color: #007bff;
+/* ✅ 네비게이션 버튼 스타일 */
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(0, 0, 0, 0.5);
   color: white;
   border: none;
-  padding: 8px 12px;
-  margin-top: 5px;
-  border-radius: 5px;
+  padding: 10px 15px;
+  border-radius: 50%;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 1.2rem;
+  transition: background-color 0.3s ease-in-out;
+  z-index: 10;
 }
 
-.save-btn:hover {
-  background-color: #0056b3;
+.carousel-btn:hover {
+  background-color: rgba(0, 0, 0, 0.8);
 }
 
-/* ✅ 슬라이드 방식으로 팁 표시 */
-.carousel {
-  display: flex;
-  overflow-x: auto;
-  scroll-behavior: smooth;
+.prev-btn {
+  left: 10px;
 }
 
-.carousel::-webkit-scrollbar {
-  height: 8px;
-}
-
-.carousel::-webkit-scrollbar-thumb {
-  background-color: #ccc;
-  border-radius: 5px;
+.next-btn {
+  right: 10px;
 }

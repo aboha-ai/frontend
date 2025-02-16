@@ -82,7 +82,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /**
-   * ✅ 일정 불러오기 버튼 클릭 시 기존 일정 아래 추가
+   * ✅ 일정 불러오기 버튼 클릭 시 `appendSelectedTrip()` 실행 (schedule.js에서만 처리)
    */
   tripList.addEventListener("click", function (event) {
     if (event.target.classList.contains("load-trip")) {
@@ -97,7 +97,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const trip = JSON.parse(tripData);
       if (trip && trip.itinerary) {
         if (typeof window.appendSelectedTrip === "function") {
-          window.appendSelectedTrip(trip); // ✅ schedule.js의 함수 호출
+          window.appendSelectedTrip(trip); // ✅ `schedule.js`에서 실행
         } else {
           console.error("🚨 appendSelectedTrip 함수가 정의되지 않았습니다!");
         }
@@ -109,22 +109,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
   });
-
-  /**
-   * ✅ 여행 팁 & FAQ 섹션 추가
-   */
-  function addTravelTipsSection() {
-    if (!document.querySelector(".trip-tips")) {
-      const mainContainer = document.querySelector(".container");
-      const tipsSection = document.createElement("section");
-      tipsSection.classList.add("trip-tips");
-      tipsSection.innerHTML = `
-        <h2>여행 팁</h2>
-        <div id="tipsContainer" class="carousel"></div>
-      `;
-      mainContainer.appendChild(tipsSection);
-    }
-  }
 
   /**
    * ✅ "저장된 여행 일정 불러오기" 버튼 클릭 시 모달 열기
