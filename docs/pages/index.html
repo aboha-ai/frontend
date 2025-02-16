@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>여행 가이드 & 현지 팁</title>
+
+    <!-- ✅ CSS 파일 연결 -->
+    <link rel="stylesheet" href="./styles/styles.css" />
+    <link rel="stylesheet" href="./styles/chatbot.css" />
+    <link rel="stylesheet" href="./styles/modal.css" />
+    <link rel="stylesheet" href="./styles/schedule.css" />
+    <link rel="stylesheet" href="./styles/tips.css" />
+
+    <!-- ✅ Axios CDN 추가 -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+
+  <body>
+    <!-- ✅ 네비게이션 바 -->
+    <header class="navbar">
+      <div class="logo-container">
+        <a href="/">
+          <img src="/assets/aboha_logo_edit.png" alt="Aboha Travel Logo" />
+        </a>
+      </div>
+      <div class="profile-container"></div>
+    </header>
+
+    <!-- ✅ 메인 컨텐츠 -->
+    <main class="container">
+      <!-- 🔹 타이틀 -->
+      <section class="title-box">
+        <h1>여행 가이드 & 현지 팁</h1>
+      </section>
+
+      <!-- 🔹 여행 일정 섹션 -->
+      <section class="schedule-box">
+        <div class="icon-container">
+          <img src="/assets/lock-icon.png" alt="잠금 아이콘" />
+        </div>
+        <p class="schedule-text">현재 여행 일정이 없습니다.</p>
+        <div class="schedule-buttons">
+          <button class="btn btn-primary" onclick="location.href='/ai-list'">
+            + 새로운 여행 일정 만들기
+          </button>
+          <button class="btn btn-secondary" id="openScheduleModal">
+            <img src="/assets/SVG-3.svg" alt="" />
+            저장된 여행 목록 불러오기
+          </button>
+        </div>
+      </section>
+
+      <!-- 🔹 일정이 불러오면 동적으로 추가됨 -->
+      <section class="trip-schedule">
+        <div id="scheduleContainer"></div>
+      </section>
+
+      <!-- 🔹 여행 팁 & FAQ 섹션
+      <section class="trip-tips" style="display: none">
+        <h2>여행 팁</h2>
+        <div id="tipsContainer" class="carousel"></div>
+      </section> -->
+      <!-- 🔹 여행 팁 & FAQ 섹션 -->
+      <section class="trip-tips" style="display: none">
+        <h2>여행 팁</h2>
+        <div id="tipsContainer" class="tips-layout"></div>
+      </section>
+
+      <!-- 🔹 챗봇 섹션 -->
+      <section class="chatbot-box">
+        <h3 class="chatbot-title">
+          <img src="/assets/SVG-2.svg" alt="" />
+          여행 팁 챗봇 도우미
+        </h3>
+        <p class="chatbot-description">
+          여행지의 문화와 예절에 대해 궁금한 점이 있으신가요? 언제든 물어보세요!
+        </p>
+        <div class="chatbot-input-area">
+          <input
+            type="text"
+            id="userInput"
+            placeholder="예: 일본 여행 시 주의할 예절이 궁금해요"
+          />
+          <button id="sendBtn" class="btn-send">
+            <img src="/assets/send_icon.svg" alt="전송 아이콘" />
+          </button>
+        </div>
+        <div class="chat-history">
+          <h4>
+            질문 기록
+            <button id="refreshBtn" class="btn-refresh">
+              <img src="/assets/chatbot_reset.svg" alt="새로고침" />
+            </button>
+          </h4>
+          <div id="chatList"></div>
+        </div>
+      </section>
+
+      <!-- 🔹 하단 버튼 -->
+      <div class="footer-buttons">
+        <button class="btn btn-dark" onclick="location.href='/my-list/vlog'">
+          <img src="/assets/write-icon.svg" alt="작성 아이콘" />
+          새 여행 기록 작성
+        </button>
+        <button class="btn btn-outline" onclick="location.href='/my-list'">
+          <img src="/assets/folder-icon.svg" alt="폴더 아이콘" />
+          나의 여행 기록 보기
+        </button>
+      </div>
+    </main>
+
+    <!-- ✅ 푸터 -->
+    <footer class="bg-white mt-12">
+      <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="text-center text-gray-500 text-sm">
+          © 2025 아보하 여행. All rights reserved.
+        </div>
+      </div>
+    </footer>
+
+    <!-- ✅ 스크립트 로드 순서 최적화 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="/js/modal.js"></script>
+    <script src="/js/chatbot.js"></script>
+    <!-- <script src="/js/test.js"></script> -->
+
+    <!-- ✅ `llm_tips.js`를 `schedule.js`보다 먼저 로드해야 함 -->
+    <script src="/js/llm_tips.js"></script>
+    <script src="/js/schedule.js"></script>
+  </body>
+</html>

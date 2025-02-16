@@ -1,18 +1,8 @@
-// ✅ Gemini API 키 설정
-const GEMINI_API_KEY = "AIzaSyDs-Fz6JgaLkQ4WeYwpsyGOL8f2CjA5a7U";
-
-// const API_URL =
-//   window.location.hostname === "localhost"
-//     ? "http://localhost:3000/api/chat" // ✅ 로컬 개발 환경
-//     : "https://your-glitch-project.glitch.me/api/chat";
-// // ✅ 모델 리스트 (사용량 초과 시 자동 전환)
-const GEMINI_MODELS = [
-  "gemini-2.0-flash",
-  "gemini-2.0-flash-lite-preview-02-05",
-  "gemini-1.5-flash",
-];
-
-let currentModelIndex = 0;
+// ✅ API 요청을 보낼 URL 설정
+const API_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:3000/api/chat" // ✅ 로컬 개발 환경
+    : "https://your-glitch-project.glitch.me/api/chat"; // ✅ 배포 환경
 
 // ✅ HTML 요소 가져오기
 const sendBtn = document.getElementById("sendBtn");
@@ -35,45 +25,19 @@ function markdownToHTML(markdownText) {
   return htmlText;
 }
 
-// ✅ Gemini API 호출 함수
-async function getGeminiResponse(question) {
-  let response;
+async function getChatbotResponse(question) {
+  try {
+    const response = await axios.post(API_URL, { question });
 
-  while (currentModelIndex < GEMINI_MODELS.length) {
-    const model = GEMINI_MODELS[currentModelIndex];
-    console.log(`🚀 현재 사용 모델: ${model}`);
-
-    try {
-      response = await axios.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          contents: [{ parts: [{ text: question }] }],
-        },
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-
-      return (
-        response.data.candidates[0]?.content?.parts[0]?.text ||
-        "응답을 받을 수 없습니다."
-      );
-    } catch (error) {
-      console.error(
-        `❌ ${model} API 오류:`,
-        error.response?.data || error.message
-      );
-
-      if (error.response?.status === 429 || error.response?.status === 400) {
-        console.warn(`⚠️ ${model} 사용량 초과! 다음 모델로 변경합니다.`);
-        currentModelIndex++;
-      } else {
-        return "챗봇 서버 오류 발생!";
-      }
+    if (!response.data.response) {
+      throw new Error("서버에서 응답이 없습니다.");
     }
-  }
 
-  return "현재 챗봇 서버가 과부하 상태입니다. 나중에 다시 시도해 주세요.";
+    return response.data.response; // ✅ 올바른 응답 반환
+  } catch (error) {
+    console.error(`❌ 서버 오류:`, error.response?.data || error.message);
+    return "챗봇 서버 오류 발생!";
+  }
 }
 
 // ✅ 버튼 클릭 이벤트 (사용자가 질문 입력)
@@ -100,9 +64,9 @@ sendBtn.addEventListener("click", async function () {
   // 채팅 기록에 추가
   chatList.appendChild(chatItem);
 
-  // Gemini API 호출하여 응답 받기
-  let botResponse = await getGeminiResponse(userText);
-  botMessage.innerHTML = markdownToHTML(botResponse); // ✅ Markdown → HTML 변환 후 출력
+  // 서버로 질문을 보내고 응답 받기
+  let botResponse = await getChatbotResponse(userText);
+  botMessage.innerHTML = markdownToHTML(botResponse);
 
   // LocalStorage 저장 (질문 & 답변)
   let chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
@@ -148,9 +112,9 @@ refreshBtn.addEventListener("click", function () {
 
   // 버튼 클릭 애니메이션
   refreshBtn.innerHTML =
-    '<img src="/docs/travel_tips/assets/chatbot_reset.svg" alt="새로 고침 아이콘" />';
+    '<img src="assets/chatbot_reset.svg" alt="새로 고침 아이콘" />';
   setTimeout(() => {
     refreshBtn.innerHTML =
-      '<img src="/docs/travel_tips/assets/chatbot_reset.svg" alt="새로 고침 아이콘" />';
+      '<img src="assets/chatbot_reset.svg" alt="새로 고침 아이콘" />';
   }, 1500);
 });
