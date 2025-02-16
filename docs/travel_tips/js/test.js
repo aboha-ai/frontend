@@ -1,19 +1,19 @@
-if (!localStorage.getItem("tripData")) {
-  fetch("/docs/travel_tips/data/tripData.json")
-    .then((response) => response.json())
-    .then((data) => {
-      // 🚀 **배열이 아니라면 배열로 변환**
-      const tripArray = Array.isArray(data) ? data : [data];
+// if (!localStorage.getItem("tripData")) {
+//   fetch("/docs/travel_tips/data/tripData.json")
+//     .then((response) => response.json())
+//     .then((data) => {
+//       // 🚀 **배열이 아니라면 배열로 변환**
+//       const tripArray = Array.isArray(data) ? data : [data];
 
-      localStorage.setItem("tripData", JSON.stringify(tripArray));
-      console.log("✅ 여행 일정이 로컬스토리지에 저장되었습니다!", tripArray);
-    })
-    .catch((error) =>
-      console.error("🚨 JSON 데이터를 불러오는데 실패했습니다!", error)
-    );
-} else {
-  console.log("📌 이미 여행 일정이 로컬스토리지에 저장되어 있습니다.");
-}
+//       localStorage.setItem("tripData", JSON.stringify(tripArray));
+//       console.log("✅ 여행 일정이 로컬스토리지에 저장되었습니다!", tripArray);
+//     })
+//     .catch((error) =>
+//       console.error("🚨 JSON 데이터를 불러오는데 실패했습니다!", error)
+//     );
+// } else {
+//   console.log("📌 이미 여행 일정이 로컬스토리지에 저장되어 있습니다.");
+// }
 // const additionalTrip = {
 //   title: "Seoul Adventure",
 //   location: {
@@ -217,3 +217,23 @@ if (!localStorage.getItem("tripData")) {
 // localStorage.setItem("tripData", JSON.stringify(trips));
 
 // console.log("✅ 새로운 여행 일정이 추가되었습니다!", additionalTrip);
+
+document.addEventListener("DOMContentLoaded", function () {
+  // ✅ 기존 tripData 변환 작업 (한 번만 실행되도록 설정)
+  if (localStorage.getItem("tripData")) {
+    const oldTrips = JSON.parse(localStorage.getItem("tripData"));
+
+    // 기존 데이터가 배열이 아니면 배열로 변환
+    const tripsArray = Array.isArray(oldTrips) ? oldTrips : [oldTrips];
+
+    tripsArray.forEach((trip) => {
+      const newKey = `event-${crypto.randomUUID()}`;
+      localStorage.setItem(newKey, JSON.stringify(trip));
+      console.log(`🔄 기존 tripData를 ${newKey} 로 변환 완료!`);
+    });
+
+    // ✅ 기존 tripData 삭제 (중복 저장 방지)
+    localStorage.removeItem("tripData");
+    console.log("🗑 기존 tripData 삭제 완료!");
+  }
+});
