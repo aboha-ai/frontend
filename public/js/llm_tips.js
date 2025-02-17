@@ -30,7 +30,6 @@ function addTipToCarousel(placeName, data) {
   let tipsContainer = document.getElementById("tipsContainer");
   let tripTipsSection = document.querySelector(".trip-tips");
 
-  // ✅ `tipsContainer`가 없으면 추가
   if (!tipsContainer) {
     const mainContainer = document.querySelector(".container");
     const tipsSection = document.createElement("section");
@@ -43,14 +42,13 @@ function addTipToCarousel(placeName, data) {
     tipsContainer = document.getElementById("tipsContainer");
   }
 
-  // ✅ 여행 팁 섹션을 보이도록 설정
   tripTipsSection.style.display = "block";
 
   let rawText = data.response || "팁 데이터를 가져올 수 없습니다.";
 
   // ✅ 마크다운 제거 및 정리
-  rawText = rawText.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>"); // 볼드 처리
-  rawText = rawText.replace(/\*/g, ""); // * 제거
+  rawText = rawText.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+  rawText = rawText.replace(/\*/g, "");
 
   // ✅ 주요 팁 / 회화 표현 / 자주 묻는 질문 분리
   const sections = rawText.split("### ");
@@ -112,46 +110,96 @@ function addTipToCarousel(placeName, data) {
     `;
 
   tipsContainer.appendChild(slide);
-  manageCarouselItems();
+  manageCarouselItems(); // ✅ 추가된 함수 호출
   scrollCarouselToEnd();
 }
 
 /**
- * ✅ 캐러셀의 최대 개수를 유지하고 오래된 항목 삭제
+ * ✅ 캐러셀 내 최대 아이템 개수를 유지하는 함수 (오래된 항목 삭제)
  */
 function manageCarouselItems() {
   let tipsContainer = document.getElementById("tipsContainer");
   let slides = tipsContainer.querySelectorAll(".tip-slide");
 
-  const MAX_CAROUSEL_ITEMS = 5; // 최대 5개까지만 유지
+  const MAX_CAROUSEL_ITEMS = 5;
   if (slides.length > MAX_CAROUSEL_ITEMS) {
     tipsContainer.removeChild(slides[0]); // 가장 오래된 팁 삭제
   }
 }
 
 /**
- * ✅ 캐러셀이 새로 추가된 슬라이드로 자동 스크롤되도록 설정
+ * ✅ 캐러셀 자동 스크롤 함수
  */
 function scrollCarouselToEnd() {
   let tipsContainer = document.getElementById("tipsContainer");
-  tipsContainer.scrollLeft = tipsContainer.scrollWidth;
+  if (tipsContainer) {
+    tipsContainer.scrollLeft = tipsContainer.scrollWidth;
+  }
 }
 
 /**
- * ✅ 팁을 로컬스토리지에 저장하는 함수 (이벤트 객체 추가)
+ * ✅ 팁을 해당 일정의 details.tips에 저장하는 함수 (로컬스토리지 `event-` 구조 반영)
  */
 window.saveTip = function (event, placeName, category) {
-  let savedTips = JSON.parse(localStorage.getItem("travelTips")) || {};
+  let trips = [];
 
-  if (!savedTips[placeName]) {
-    savedTips[placeName] = {
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key.startsWith("event-")) {
+      trips.push({ key, ...JSON.parse(localStorage.getItem(key)) });
+    }
+  }
+
+  console.log("📂 현재 저장된 여행 일정 데이터:", trips);
+  console.log("🔎 찾는 장소 이름:", placeName);
+
+  let tripIndex = trips.findIndex((trip) =>
+    trip.itinerary.some((day) =>
+      day.events.some((event) => event.title.trim() === placeName.trim())
+    )
+  );
+
+  if (tripIndex === -1) {
+    console.warn(`⚠️ '${placeName}' 해당 일정 없음`, trips);
+    alert("❌ 해당 장소가 일정에 없습니다!");
+    return;
+  }
+
+  let selectedTrip = trips[tripIndex];
+
+  let selectedDay = selectedTrip.itinerary.find((day) =>
+    day.events.some((event) => event.title.trim() === placeName.trim())
+  );
+
+  if (!selectedDay) {
+    console.warn(`⚠️ '${placeName}' 해당 일정에서 찾을 수 없음`);
+    alert("❌ 해당 장소가 일정에 없습니다!");
+    return;
+  }
+
+  let selectedEvent = selectedDay.events.find(
+    (event) => event.title.trim() === placeName.trim()
+  );
+
+  if (!selectedEvent) {
+    console.warn(`⚠️ '${placeName}' 해당 이벤트 없음`);
+    alert("❌ 해당 장소가 일정에 없습니다!");
+    return;
+  }
+
+  console.log("✅ 해당 장소(이벤트) 찾음:", selectedEvent);
+
+  if (!selectedEvent.details) {
+    selectedEvent.details = {};
+  }
+  if (!selectedEvent.details.tips) {
+    selectedEvent.details.tips = {
       majorTips: [],
       conversationTips: [],
       faqTips: [],
     };
   }
 
-  // ✅ 클릭된 버튼이 속한 `.tip-box`에서 li 리스트 찾기
   let button = event.target;
   let tipBox = button.closest(".tip-section");
   let tipList = tipBox.querySelectorAll("ul li");
@@ -161,20 +209,19 @@ window.saveTip = function (event, placeName, category) {
     return;
   }
 
-  // ✅ 리스트 항목 저장
-  savedTips[placeName][category] = Array.from(tipList).map(
+  selectedEvent.details.tips[category] = Array.from(tipList).map(
     (li) => li.innerText
   );
-  localStorage.setItem("travelTips", JSON.stringify(savedTips));
 
-  console.log(`✅ ${placeName} - ${category} 저장 완료!`, savedTips);
+  localStorage.setItem(selectedTrip.key, JSON.stringify(selectedTrip));
 
-  // ✅ Alert 메시지 간단하게 변경
+  console.log(`✅ ${placeName} - ${category} 저장 완료!`, selectedTrip);
+
   let alertMessage = {
     majorTips: "팁 저장 완료!",
     conversationTips: "회화 표현 저장 완료!",
     faqTips: "FAQ 저장 완료!",
   };
 
-  alert(alertMessage[category]); // ✅ 사용자 친화적인 메시지 출력
+  alert(alertMessage[category]);
 };
