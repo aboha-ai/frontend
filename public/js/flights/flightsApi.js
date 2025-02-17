@@ -1,6 +1,12 @@
 export async function fetchFlights(departure, arrival, date, passengers) {
+  const isLocal =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1";
+
+  const SERVER_URL = isLocal
+    ? "http://localhost:3000"
+    : "https://yellow-atom-tea.glitch.me";
   try {
-    const SERVER_URL = "https://yellow-atom-tea.glitch.me"; // Glitch 서버 URL
     const url = `${SERVER_URL}/flights?departure=${encodeURIComponent(
       departure
     )}&arrival=${encodeURIComponent(arrival)}&date=${encodeURIComponent(
