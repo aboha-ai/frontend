@@ -11,7 +11,7 @@ export function renderStayResults(stays) {
   stays.forEach((stay, index) => {
     // 로컬 이미지 자동 매핑 (stays1.png, stays2.png ...)
     const imageIndex = (index % 10) + 1; // stays1.png ~ stays10.png 반복
-    const localImage = `/juwon/assets/images/stays/stays${imageIndex}.png`;
+    const localImage = `/public/images/stays/stays${imageIndex}.png`;
 
     // 숙소 카드 생성
     const stayCard = document.createElement("div");
