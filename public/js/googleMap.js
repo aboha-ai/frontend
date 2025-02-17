@@ -1,28 +1,24 @@
 let map;
-let currentMarker = null; // 현재 표시된 마커를 저장할 변수
+let currentMarker = null;
 
-// Google Map 초기화
-function initMap() {
-  map = new google.maps.Map(document.getElementById("map"), {
-    center: { lat: 37.5665, lng: 126.978 }, // 서울 좌표
-    zoom: 12,
-  });
+// 장소를 클릭할 때 호출되는 함수
+async function handleMarkerClick(event) {
+  const name = event.target.name;
+  const address = event.target.address;
+  const country = event.target.country;
+
+  const location = await fetchGeolocationFromDetails(name, address, country);
+  if (location) {
+    console.log(`위치 정보: ${location.lat}, ${location.lng}`);
+    showLocation(location); // 위치 정보가 정상적으로 받아지면 지도 업데이트
+  } else {
+    console.log("위치 정보를 찾을 수 없습니다.");
+  }
 }
 
-// 위치 정보가 제공되었을 때 해당 위치로 지도와 마커 업데이트
+// 위치를 지도에 표시하는 함수
 async function showLocation(location) {
   try {
-    // location에 위도(lat)와 경도(lng)가 없다면, name, address, country로 검색
-    if (!location.lat || !location.lng) {
-      if (location.name || location.address || location.country) {
-        const geolocation = await geocodeByDetails(location); // 세부 정보로 검색
-        location = { ...location, ...geolocation };
-      } else {
-        console.error("장소 이름, 주소 또는 국가가 제공되지 않았습니다.");
-        return;
-      }
-    }
-
     console.log("위치 정보:", location);
 
     // 지도 중심 업데이트
@@ -41,6 +37,7 @@ async function showLocation(location) {
     });
   } catch (error) {
     console.error("위치 정보 로딩 실패:", error);
+    alert("위치 정보를 로딩할 수 없습니다. 다시 시도해 주세요.");
   }
 }
 
@@ -65,3 +62,56 @@ async function geocodeByDetails(location) {
     });
   });
 }
+
+async function getApiKey() {
+  try {
+    const response = await fetch("/api/maps-key");
+    const data = await response.json();
+    return data.key;
+  } catch (error) {
+    console.error("Error fetching API Key:", error);
+    return null;
+  }
+}
+
+async function loadGoogleMapsScript() {
+  const apiKey = await getApiKey(); // Wait for the key
+
+  if (!apiKey) {
+    console.error("No API key available. Stopping map initialization.");
+    return;
+  }
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
+window.initMap = async function () {
+  try {
+    await loadGoogleMapsScript(); // API Key and Script loading
+
+    map = new google.maps.Map(document.getElementById("map"), {
+      center: { lat: 37.5665, lng: 126.978 }, // 기본 위치
+      zoom: 12,
+    });
+
+    // 예시로, 마커를 생성하고 클릭 이벤트 추가
+    const marker = new google.maps.Marker({
+      position: { lat: 37.5665, lng: 126.978 },
+      map: map,
+      title: "Victoria Peak",
+    });
+
+    // 마커 클릭 시 handleMarkerClick 함수 호출
+    marker.addListener("click", handleMarkerClick);
+  } catch (error) {
+    console.error("Map initialization error:", error);
+  }
+};
