@@ -10,14 +10,7 @@ app.use(express.static(path.join(__dirname, "frontend", "public")));
 app.use(express.static(path.join(__dirname, "frontend", "docs")));
 app.use(express.static(path.join(__dirname, "frontend", "js"))); // js 폴더도 추가
 
-// (선택 사항) 특정 URL 경로에 대한 요청 처리 (예: /home)
 app.get("/home", (req, res) => {
-  res.sendFile(path.join(__dirname, "frontend", "docs", "home.html"));
-});
-
-// 기본 경로 ('/') 또는 다른 모든 경로에 대한 요청 처리
-app.get("*", (req, res) => {
-  // '*'는 모든 경로를 의미
   res.sendFile(path.join(__dirname, "frontend", "docs", "home.html"));
 });
 
