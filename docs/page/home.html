@@ -8,8 +8,13 @@
       href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&amp;display=swap"
       rel="stylesheet"
     />
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/frontend/public/favicon.svg" />
+    <link rel="shortcut icon" href="/frontend/public/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="script.js"></script>
+    <script defer src="/frontend/public/js/home.js"></script>
   </head>
 
   <body class="bg-gray-100 font-sans">
@@ -17,9 +22,9 @@
       <div
         class="container mx-auto px-4 py-4 flex items-center justify-between"
       >
-        <a href="index.html" class="flex items-center">
+        <a href="home.html" class="flex items-center">
           <img
-            src="\frontend\images\logo.png"
+            src="/frontend/public/images/logo.png"
             alt="Aboha 여정 로고"
             class="h-8 w-auto mr-2"
           />
@@ -65,10 +70,10 @@
 
         <div class="flex justify-between mt-8">
           <button
-            id="openVlogModalButton"
+            id="tipsButton"
             class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none"
           >
-            + 새 기록 작성
+            여행 팁 보러가기
           </button>
           <button
             id="viewVlogsButton"
@@ -199,13 +204,7 @@
             >
               취소
             </button>
-            <button
-              type="button"
-              id="tipsButton"
-              class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm"
-            >
-              여행 팁 보러가기
-            </button>
+
             <button
               type="button"
               id="itineraryButton"

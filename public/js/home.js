@@ -46,19 +46,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // "새 기록 작성" 버튼 클릭 이벤트 (임시)
-  const openVlogModalButton = document.getElementById("openVlogModalButton");
-  if (openVlogModalButton) {
-    openVlogModalButton.addEventListener("click", () => {
-      console.log("새 기록 작성 버튼 클릭 (임시)");
-    });
-  }
-
-  // "여행 팁 보러가기" 버튼 클릭 이벤트 (모달 내부)
+  // "여행 팁 보러가기" 버튼 클릭 이벤트 - 수정됨
   const tipsButton = document.getElementById("tipsButton");
   if (tipsButton) {
     tipsButton.addEventListener("click", () => {
-      sendDataAndRedirect("/travel-tips.html");
+      window.location.href = "/travel-tips.html"; // 바로 페이지 이동
     });
   }
 
@@ -79,22 +71,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // 로컬 스토리지 초기화
 function resetLocalStorage() {
-  //localStorage.clear(); alert()때문에 주석처리.
-  showAlert("로컬 스토리지 데이터가 초기화되었습니다."); // showAlert() 사용
+  showAlert("로컬 스토리지 데이터가 초기화되었습니다.");
   selectedThemes = {
     accommodation: [],
     food: [],
     attractions: [],
   };
   initializeThemeButtons();
-  localStorage.clear(); // localStorage 초기화
+  localStorage.clear();
 }
 
 // 테마 선택 모달 관련 함수들
 function openThemeModal() {
   const cityInput = document.getElementById("cityInput").value;
   if (!cityInput) {
-    // alert("도시와 나라를 입력해주세요.");
     showAlert("도시와 나라를 입력해주세요.");
     return;
   }
@@ -102,7 +92,6 @@ function openThemeModal() {
   const [city, country] = cityInput.split(",").map((part) => part.trim());
 
   if (!city || !country) {
-    // alert("도시와 나라를 쉼표(,)로 구분하여 입력해주세요 예시)서울,대한민국");
     showAlert(
       "도시와 나라를 쉼표(,)로 구분하여 입력해주세요 예시)서울,대한민국"
     );
@@ -121,26 +110,25 @@ function openThemeModal() {
 
   document.getElementById(
     "modal-title"
-  ).textContent = `여행 테마 선택 - ${cityInput}`; // 모달 제목 변경
+  ).textContent = `여행 테마 선택 - ${cityInput}`;
   document.getElementById("themeModal").classList.remove("hidden");
 }
 
-// "취소" 버튼을 눌러서 모달을 닫을 때,  *아무것도 저장 안함*.
+// "취소" 버튼을 눌러서 모달을 닫을 때
 function closeThemeModal() {
   document.getElementById("themeModal").classList.add("hidden");
 }
 
 // 테마 버튼 초기화 및 이벤트 핸들러 연결
 function initializeThemeButtons() {
-  const themeButtons = document.querySelectorAll(".theme-button"); // 클래스 선택자 사용
+  const themeButtons = document.querySelectorAll(".theme-button");
   themeButtons.forEach((button) => {
     button.removeEventListener("click", handleThemeButtonClick);
     button.addEventListener("click", handleThemeButtonClick);
 
-    const category = button.dataset.category; // data-category 속성 값 (accommodation, food, attractions)
-    const theme = button.textContent.trim().substring(1); // '#' 제거 후, 앞뒤 공백 제거
+    const category = button.dataset.category;
+    const theme = button.textContent.trim().substring(1);
 
-    // 저장된 테마에 따라 버튼 스타일 초기화
     if (selectedThemes[category]?.includes(theme)) {
       button.classList.add("bg-blue-500", "text-white");
       button.classList.remove("bg-blue-100", "text-blue-800");
@@ -151,26 +139,23 @@ function initializeThemeButtons() {
   });
 }
 
-// 테마 버튼 클릭 핸들러: 선택/해제 시, 스타일(클래스) 변경 및 selectedThemes 객체 업데이트
+// 테마 버튼 클릭 핸들러
 function handleThemeButtonClick(event) {
   const button = event.currentTarget;
-  const category = button.dataset.category; // data-category 속성 값
-  const theme = button.textContent.trim().substring(1); // '#' 제거, 앞뒤 공백 제거
+  const category = button.dataset.category;
+  const theme = button.textContent.trim().substring(1);
 
   if (selectedThemes[category].includes(theme)) {
-    // 이미 선택된 테마 -> 제거
     selectedThemes[category] = selectedThemes[category].filter(
       (t) => t !== theme
     );
     button.classList.remove("bg-blue-500", "text-white");
-    button.classList.add("bg-blue-100", "text-blue-800"); // 선택 해제 시 스타일
+    button.classList.add("bg-blue-100", "text-blue-800");
   } else {
-    // 선택되지 않은 테마 -> 추가
     selectedThemes[category].push(theme);
-    button.classList.add("bg-blue-500", "text-white"); // 선택 시 스타일
+    button.classList.add("bg-blue-500", "text-white");
     button.classList.remove("bg-blue-100", "text-blue-800");
   }
-  // localStorage에 변경된 selectedThemes 객체 저장
   localStorage.setItem("selectedThemes", JSON.stringify(selectedThemes));
 }
 
@@ -179,47 +164,37 @@ function sendDataAndRedirect(redirectUrl) {
   const cityInput = document.getElementById("cityInput").value;
 
   if (!cityInput) {
-    // alert("도시와 나라를 입력해주세요.");
-    showAlert("도시와 나라를 입력해주세요."); // showAlert() 사용
+    showAlert("도시와 나라를 입력해주세요.");
     return;
   }
 
   const [city, country] = cityInput.split(",").map((part) => part.trim());
 
   if (!city || !country) {
-    // alert("도시와 나라를 쉼표(,)로 구분하여 입력해주세요 예시)서울,대한민국");
     showAlert(
       "도시와 나라를 쉼표(,)로 구분하여 입력해주세요 예시)서울,대한민국"
-    ); //showAlert()사용.
+    );
     return;
   }
 
-  // 시작 날짜와 종료 날짜 가져오기
   const startDate = document.getElementById("startDate").value;
   const endDate = document.getElementById("endDate").value;
 
-  // **************************************************************
-  //  localStorage에, city와 country, startDate, endDate를 저장.
   localStorage.setItem("selectedCity", city);
   localStorage.setItem("selectedCountry", country);
   localStorage.setItem("startDate", startDate);
   localStorage.setItem("endDate", endDate);
-  // **************************************************************
 
-  // 전송할 데이터 객체 생성 (선택된 도시, 나라, 테마, 시작/종료 날짜)
   const dataToSend = {
-    selectedCity: city, // 도시 이름
-    selectedCountry: country, // 나라 이름
-    selectedThemes: selectedThemes, // 카테고리별 테마 객체
-    startDate: startDate, // 시작 날짜
-    endDate: endDate, // 종료 날짜
-    destinations: [], // 빈 배열 (index.html에서는 destinations 정보 사용 안 함)
+    selectedCity: city,
+    selectedCountry: country,
+    selectedThemes: selectedThemes,
+    startDate: startDate,
+    endDate: endDate,
+    destinations: [],
   };
 
-  // 데이터를 로컬 스토리지에 임시 저장 (페이지 이동 시 데이터 유지)
   localStorage.setItem("tempData", JSON.stringify(dataToSend));
-
-  // 지정된 URL로 리디렉션
   window.location.href = redirectUrl;
 }
 
