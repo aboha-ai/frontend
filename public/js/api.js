@@ -1,10 +1,8 @@
 const dataCache = {}; // 데이터를 캐시할 객체
-
 // api.js
-const BASE_URL = "https://maps.googleapis.com/maps/api"; // BASE_URL 추가
 const GEO_API_KEY = process.env.GOOGLE_MAPS_API_KEY; // 환경 변수에서 키 가져오기
 const GEO_API_URL = GEO_API_KEY
-  ? `${BASE_URL}/geocode/json?key=${GEO_API_KEY}` // BASE_URL을 적용한 URL
+  ? `https://maps.googleapis.com/maps/api/geocode/json?key=${GEO_API_KEY}`
   : null; // API 키가 없으면 null
 
 // null 값을 'null' 문자열로 변환하고, 값이 null인 키는 출력하지 않도록 처리

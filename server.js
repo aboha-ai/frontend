@@ -10,10 +10,9 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-const BASE_URL = process.env.BASE_URL || "https://yellow-atom-tea.glitch.me"; // .env에서 BASE_URL을 불러옴, 없으면 기본값 사용
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
-const GEMINI_API_URL = `${BASE_URL}/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`; // BASE_URL 사용
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 const GEO_API_KEY = process.env.GEO_API_KEY;
 const GEO_API_URL = "https://maps.googleapis.com/maps/api/geocode/json";
 
