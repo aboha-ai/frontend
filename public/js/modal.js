@@ -453,7 +453,7 @@ document.addEventListener('DOMContentLoaded', function () {
     async function sendJsonToServer(jsonData) {
         
         try {
-            const url = "http://localhost:3000/generate-text";
+            const url = BASE_URL + "/generate-text";
             const response = await fetch(url, {
                 method: 'POST', // HTTP 메소드
                 headers: {
