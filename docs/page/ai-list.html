@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>추천 여행지</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://ai-public.creatie.ai/gen_page/tailwind-custom.css"
+      rel="stylesheet"
+    />
+    <!-- Axios 라이브러리 포함 -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- 먼저 googleMap.js를 로드 (모듈로 로드) -->
+    <!-- <script type="module" src="assets/js/googleMap.js"></script> -->
+
+    <script
+      src="https://maps.googleapis.com/maps/api/js?callback=initMap&libraries=places"
+      async
+      defer
+    ></script>
+  </head>
+
+  <body class="font-sans bg-gray-50">
+    <header
+      class="h-[60px] px-4 flex items-center justify-between border-b border-gray-200"
+    >
+      <div class="text-2xl font-bold">AboHa</div>
+      <img
+        src="https://creatie.ai/ai/api/search-image?query=A professional headshot of a person&width=40&height=40"
+        class="w-10 h-10 rounded-full object-cover"
+      />
+    </header>
+
+    <nav class="flex border-b border-gray-200">
+      <button
+        id="restaurants-tab"
+        class="tab-button px-6 py-3 text-gray-600"
+        onclick="changeTab('restaurants')"
+      >
+        레스토랑
+      </button>
+      <button
+        id="touristSpots-tab"
+        class="tab-button px-6 py-3 bg-black text-white"
+        onclick="changeTab('touristSpots')"
+      >
+        관광지
+      </button>
+      <button
+        id="hotels-tab"
+        class="tab-button px-6 py-3 text-gray-600"
+        onclick="changeTab('hotels')"
+      >
+        호텔
+      </button>
+    </nav>
+
+    <main class="flex relative">
+      <div
+        class="w-full sm:w-[30%] border-r border-gray-200 h-[calc(100vh-180px)] overflow-y-auto"
+      >
+        <div
+          id="restaurants-content"
+          class="content-section p-4 border-b border-gray-200"
+        ></div>
+        <div
+          id="touristSpots-content"
+          class="content-section p-4 border-b border-gray-200"
+        ></div>
+        <div
+          id="hotels-content"
+          class="content-section p-4 border-b border-gray-200"
+        ></div>
+      </div>
+
+      <!-- ✅ Google Maps 영역 -->
+      <div
+        id="map"
+        class="w-full sm:w-[70%] h-[calc(100vh-60px)] top-0 left-0 z-10"
+      ></div>
+
+      <div class="w-full sm:w-[30%] p-4">
+        <h3 class="text-xl font-bold mb-4" id="place-name">관광지 설명</h3>
+        <img
+          id="place-photo"
+          class="w-full h-60 object-cover mb-4 rounded-md"
+        />
+        <p id="place-hours" class="text-sm text-gray-600"></p>
+        <p id="place-price" class="text-sm text-gray-600"></p>
+        <p id="place-description" class="text-sm text-gray-600"></p>
+      </div>
+    </main>
+
+    <footer class="bg-white mt-12">
+      <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="text-center text-gray-500 text-sm">
+          © 2025 아보하 여행. All rights reserved.
+        </div>
+      </div>
+    </footer>
+
+    <!-- 팝업을 위한 div -->
+    <div id="modal" class="modal hidden">
+      <div class="modal-content">
+        <span id="close-btn" class="close-btn">&times;</span>
+        <h2 id="popup-title"></h2>
+        <p id="popup-description"></p>
+      </div>
+    </div>
+
+    <!-- 새로 추천받기 버튼 -->
+    <button
+      id="refresh-btn"
+      class="fixed bottom-4 right-4 bg-black text-white px-4 py-2 rounded-full shadow-lg"
+    >
+      🔄 추천 다시 받기
+    </button>
+    <!-- 저장하기 버튼을 위한 HTML 코드 -->
+    <button
+      id="save-button"
+      class="mt-4 p-2 bg-blue-500 text-white rounded fixed bottom-4 left-4"
+    >
+      저장하기
+    </button>
+  </body>
+  <script src="../js/googleMap.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/tabHandler.js"></script>
+</html>
