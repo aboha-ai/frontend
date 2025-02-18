@@ -21,7 +21,7 @@
     />
     <link rel="shortcut icon" href="../favicon/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="../site.webmanifest.json" />
+    <link rel="manifest" href="../favicon/site.webmanifest" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="../js/home.js"></script>
   </head>
@@ -84,12 +84,12 @@
           >
             여행 팁 보러가기
           </button>
-          <button
-            id="viewVlogsButton"
-            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none"
+          <a
+          href="{{BASE_URL}}/my-list"
+          class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none"
           >
             나의 여행 기록 보기
-          </button>
+          </a>
         </div>
         <div class="mt-8">
           <button

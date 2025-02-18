@@ -38,13 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
     resetButton.addEventListener("click", resetLocalStorage);
   }
 
-  // "나의 여행 기록 보기" 버튼 클릭 이벤트 (임시)
-  const viewVlogsButton = document.getElementById("viewVlogsButton");
-  if (viewVlogsButton) {
-    viewVlogsButton.addEventListener("click", () => {
-      window.location.href = "${BASE_URL}/my-list";
-    });
-  }
+  
 
   // "여행 팁 보러가기" 버튼 클릭 이벤트 - 수정됨
   const tipsButton = document.getElementById("tipsButton");

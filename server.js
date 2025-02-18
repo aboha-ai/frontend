@@ -1,6 +1,5 @@
 require('dotenv').config();
 const port = process.env.PORT || 3000; // PORT 환경 변수가 있으면 사용, 없으면 3000
-const BASE_URL = process.env.BASE_URL; // 기본값 설정
 const baseUrl = process.env.BASE_URL;
 const fetch = require("node-fetch");
 const axios = require("axios");
@@ -115,20 +114,23 @@ app.get('/my-list', async (req, res) => {
 }); 
 
 
-app.get("/home", (req, res) => {
-    const homePath = path.join(__dirname, "docs/page/home.html");
-  
-    // fs.promises.readFile을 사용하여 비동기적으로 파일 읽기
-    fs.promises.readFile(homePath, 'utf-8')
-      .then((homeContent) => {
+app.get("/home", async (req, res) => {
+    try {
+        const homePath = path.join(__dirname, "docs/page/home.html");
+
+        // home.html 파일을 비동기적으로 읽기
+        let homeContent = await fs.promises.readFile(homePath, "utf-8");
+
+        // 환경 변수 값 삽입 (BASE_URL)
+        homeContent = homeContent.replace("{{BASE_URL}}", process.env.BASE_URL);
+
         res.send(homeContent);
-      })
-      .catch((err) => {
+    } catch (err) {
         console.error("파일 읽기 오류:", err);
         res.status(500).send("파일을 읽는 중 오류가 발생했습니다.");
-      });
-  
+    }
 });
+
 
 // ✅ `{BASE_URL}/ai-list/detail`로 페이지 연결
 app.get("/ai-list/detail", (req, res) => {
