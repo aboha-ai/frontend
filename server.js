@@ -5,8 +5,8 @@ const fetch = require("node-fetch"); // npm install node-fetch 필요
 const app = express();
 
 // 포트는 Glitch 환경변수 PORT 또는 3000 사용
-const PORT = process.env.PORT || 3000;
-const BASE_URL = process.env.BASE_URL || "http://localhost:3000"; // 기본값 설정
+const PORT = process.env.PORT;
+const BASE_URL = process.env.BASE_URL; // 기본값 설정
 
 // JSON 바디 파서 설정
 app.use(express.json());
