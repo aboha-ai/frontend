@@ -51,16 +51,17 @@ app.post("/generate-text", async (req, res) => { // 새로운 API 엔드포인�
 // 정적 파일 서빙 (css, js, 이미지 등)
 app.use(express.static(path.join(__dirname, 'public')));
 
+const baseUrl = process.env.BASE_URL;
 // 메인 페이지 라우터
 app.get('/my-list', async (req, res) => {
-  const headerPath = path.join(__dirname, 'docs/page/navber.html');
+  const navberPath = path.join(__dirname, 'docs/page/navber.html');
   const footerPath = path.join(__dirname, 'docs/page/footer.html');
-  const mainContentPath = path.join(__dirname, 'docs/page/index.html');
+  const mainContentPath = path.join(__dirname, 'docs/page/my-list.html');
   const modalContentPath = path.join(__dirname, 'docs/page/modal.html');
 
   try {
-      const [header, footer, content, modalContent] = await Promise.all([
-          fs.promises.readFile(headerPath, 'utf-8'),
+      const [navber, footer, content, modalContent] = await Promise.all([
+          fs.promises.readFile(navberPath, 'utf-8'),
           fs.promises.readFile(footerPath, 'utf-8'),
           fs.promises.readFile(mainContentPath, 'utf-8'),
           fs.promises.readFile(modalContentPath, 'utf-8')
@@ -80,7 +81,7 @@ app.get('/my-list', async (req, res) => {
               <script src="https://ai-public.creatie.ai/gen_page/tailwind-config.min.js" data-color="#000000" data-border-radius="small"></script>
           </head>
           <body class="min-h-screen flex flex-col bg-gray-50 font-sans">
-              ${header}
+              ${navber}
               <main class="flex-grow">
                   <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                       ${content}
@@ -88,6 +89,10 @@ app.get('/my-list', async (req, res) => {
               </main>
               ${footer}
               ${modalContent}
+              <script>
+                // 서버에서 전달한 BASE_URL
+                const BASE_URL = "${baseUrl}";  // 환경 변수를 삽입
+              </script>
               <script src="../js/record.js"></script>
               <script src="../js/modal.js"></script>
           </body>

@@ -74,6 +74,9 @@ document.addEventListener('DOMContentLoaded', function () {
             closeModal('write-form');
         }
 
+        if (target.id == 'new-link') {
+            window.location.href = BASE_URL + '/ai-list';
+        }
         if (target.id === 'popup-overlay') {
             closeModal('popup-overlay');
             closeModal('popup-modal');
