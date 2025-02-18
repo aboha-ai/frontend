@@ -92,3 +92,67 @@ async function refreshData(tabData) {
     // 오류 발생 시 처리 로직 추가 (예: 사용자에게 오류 메시지 표시)
   }
 }
+
+// 저장하기 버튼 클릭 이벤트 리스너
+document.getElementById("save-button").addEventListener("click", function () {
+  localStorage.setItem("parsedData", JSON.stringify(parsedData));
+
+  createAndSaveTripData();
+  saveSelectedData();
+});
+
+// saveSelectedData 함수는 이미 api.js에 정의되어 있으므로 그대로 사용합니다.
+async function saveSelectedData() {
+  const checkboxes = document.querySelectorAll(".place-checkbox");
+  const updatedData = { hotels: [], restaurants: [], touristSpots: [] };
+  const deletedData = { hotels: [], restaurants: [], touristSpots: [] };
+
+  let hasChecked = false; // 체크된 항목이 있는지 확인하는 변수
+
+  checkboxes.forEach((checkbox) => {
+    const category = checkbox.dataset.category;
+    const index = parseInt(checkbox.dataset.index, 10);
+    const allData = JSON.parse(localStorage.getItem("touristData")) || {
+      hotels: [],
+      restaurants: [],
+      touristSpots: [],
+    };
+
+    if (
+      category &&
+      updatedData[category] !== undefined &&
+      deletedData[category] !== undefined
+    ) {
+      if (checkbox.checked) {
+        updatedData[category].push(allData[category][index]);
+        hasChecked = true; // 체크된 항목이 있으면 true로 설정
+      } else {
+        deletedData[category].push(allData[category][index]);
+      }
+    } else {
+      console.error("❌ 잘못된 category 값:", category);
+    }
+  });
+
+  if (!hasChecked) {
+    alert("저장할 항목을 선택해주세요.");
+    return; // 체크된 항목이 없으면 저장하지 않음
+  }
+
+  // 로컬 스토리지에 업데이트된 데이터 저장
+  localStorage.setItem("touristData", JSON.stringify(updatedData));
+
+  // 삭제된 데이터도 로컬 스토리지에 저장
+  localStorage.setItem("deletedTouristData", JSON.stringify(deletedData));
+
+  console.log("✅ 저장된 데이터:", updatedData);
+  console.log("❌ 삭제된 데이터:", deletedData);
+
+  // 저장된 데이터가 반영된 후, 다시 콘텐츠 업데이트
+  Object.keys(updatedData).forEach((category) => {
+    // 해당 카테고리에 대해 데이터가 있으면 업데이트
+    if (updatedData[category].length > 0) {
+      updateContent(category, updatedData);
+    }
+  });
+}

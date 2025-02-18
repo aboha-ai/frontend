@@ -112,6 +112,6 @@ window.initMap = async function () {
     // 마커 클릭 시 handleMarkerClick 함수 호출
     marker.addListener("click", handleMarkerClick);
   } catch (error) {
-    console.error("Map initialization error:", error);
+    console.error("Map initializationf error:", error);
   }
 };

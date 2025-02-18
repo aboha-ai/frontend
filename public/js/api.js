@@ -1,8 +1,10 @@
 const dataCache = {}; // 데이터를 캐시할 객체
+
 // api.js
+const BASE_URL = "https://maps.googleapis.com/maps/api"; // BASE_URL 추가
 const GEO_API_KEY = process.env.GOOGLE_MAPS_API_KEY; // 환경 변수에서 키 가져오기
 const GEO_API_URL = GEO_API_KEY
-  ? `https://maps.googleapis.com/maps/api/geocode/json?key=${GEO_API_KEY}`
+  ? `${BASE_URL}/geocode/json?key=${GEO_API_KEY}` // BASE_URL을 적용한 URL
   : null; // API 키가 없으면 null
 
 // null 값을 'null' 문자열로 변환하고, 값이 null인 키는 출력하지 않도록 처리
@@ -40,6 +42,7 @@ async function fetchTouristData(country, city) {
     return null; // 또는 빈 객체 {} 반환
   }
 }
+
 async function updateContent(category, tabData) {
   // 데이터가 캐시에 있으면 사용
   if (
@@ -92,12 +95,18 @@ async function updateContent(category, tabData) {
   renderContent(category, dataMap[category]); // 화면에 데이터 반영
 }
 
-// 화면에 콘텐츠를 렌더링하는 함수
 function renderContent(category, data) {
   const contentContainer = document.getElementById(`${category}-content`);
 
   // 기존 내용 초기화 (최적화 필요)
   contentContainer.innerHTML = "";
+
+  // data가 배열이 아닌 경우 처리
+  if (!Array.isArray(data)) {
+    console.error(`${category} 데이터가 배열이 아닙니다:`, data);
+    contentContainer.innerHTML = `<p>잘못된 데이터 형식입니다. 데이터를 확인해 주세요.</p>`;
+    return;
+  }
 
   data.forEach((place, index) => {
     const placeElement = document.createElement("div");
@@ -126,215 +135,6 @@ function renderContent(category, data) {
   });
 }
 
-function saveSelectedData() {
-  const checkboxes = document.querySelectorAll(".place-checkbox");
-  const updatedData = { hotels: [], restaurants: [], touristSpots: [] };
-  const deletedData = { hotels: [], restaurants: [], touristSpots: [] };
-
-  let hasChecked = false; // 체크된 항목이 있는지 확인하는 변수
-
-  checkboxes.forEach((checkbox) => {
-    const category = checkbox.dataset.category;
-    const index = parseInt(checkbox.dataset.index, 10);
-    const allData = JSON.parse(localStorage.getItem("touristData")) || {
-      hotels: [],
-      restaurants: [],
-      touristSpots: [],
-    };
-
-    if (
-      category &&
-      updatedData[category] !== undefined &&
-      deletedData[category] !== undefined
-    ) {
-      if (checkbox.checked) {
-        updatedData[category].push(allData[category][index]);
-        hasChecked = true; // 체크된 항목이 있으면 true로 설정
-      } else {
-        deletedData[category].push(allData[category][index]);
-      }
-    } else {
-      console.error("❌ 잘못된 category 값:", category);
-    }
-  });
-
-  if (!hasChecked) {
-    alert("저장할 항목을 선택해주세요.");
-    return; // 체크된 항목이 없으면 저장하지 않음
-  }
-
-  // 로컬 스토리지에 업데이트된 데이터 저장
-  localStorage.setItem("touristData", JSON.stringify(updatedData));
-
-  // 삭제된 데이터도 로컬 스토리지에 저장
-  localStorage.setItem("deletedTouristData", JSON.stringify(deletedData));
-
-  console.log("✅ 저장된 데이터:", updatedData);
-  console.log("❌ 삭제된 데이터:", deletedData);
-  changeUpdatedData(updatedData);
-
-  // 저장된 데이터가 반영된 후, 다시 콘텐츠 업데이트
-  Object.keys(updatedData).forEach((category) => {
-    // 해당 카테고리에 대해 데이터가 있으면 업데이트
-    if (updatedData[category].length > 0) {
-      updateContent(category, updatedData);
-    }
-  });
-}
-
-function changeUpdatedData(updatedData) {
-  const tripData = {
-    title: "test",
-    location: {
-      arrival_time: "2025-04-15T10:00:00",
-      address: "서울, 대한민국",
-      city: "Seoul",
-    },
-    itinerary: [],
-  };
-
-  const getRandomDate = (startDate, endDate) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const randomTime =
-      start.getTime() + Math.random() * (end.getTime() - start.getTime());
-    return new Date(randomTime);
-  };
-
-  const getRandomTimeAndTitle = () => {
-    const times = ["08:00", "13:00", "18:00"];
-    const titles = {
-      "08:00": "아침 식사",
-      "13:00": "점심 식사",
-      "18:00": "저녁 식사",
-    };
-
-    const randomTime = times[Math.floor(Math.random() * times.length)];
-    return {
-      time: randomTime,
-      title: titles[randomTime],
-    };
-  };
-
-  const createEvent = (time, title, location, link, cost) => ({
-    time: time,
-    title: title,
-    location: location,
-    details: {
-      open_time: "24시간",
-      cost: cost || null,
-      link: link,
-    },
-  });
-
-  const startDate = "2025-04-15";
-  const endDate = "2025-04-17"; // 예시로 3일 여행
-
-  // Hotels에 대한 itinerary 추가
-  updatedData.hotels.forEach((hotel, index) => {
-    if (hotel && hotel.address) {
-      // address가 존재할 때만 추가
-      const { time, title } = getRandomTimeAndTitle();
-      const randomDate = getRandomDate(startDate, endDate);
-      const formattedDate = randomDate.toISOString().split("T")[0];
-
-      const event = createEvent(
-        time,
-        title,
-        hotel.address,
-        hotel.link,
-        hotel.cost
-      );
-
-      if (!tripData.itinerary[index]) {
-        tripData.itinerary.push({
-          day: index + 1,
-          date: formattedDate,
-          events: [event],
-        });
-      } else {
-        tripData.itinerary[index].events.push(event);
-      }
-    }
-  });
-
-  // Restaurants에 대한 itinerary 추가
-  updatedData.restaurants.forEach((restaurant, index) => {
-    if (restaurant && restaurant.address) {
-      // address가 존재할 때만 추가
-      const { time, title } = getRandomTimeAndTitle();
-      const randomDate = getRandomDate(startDate, endDate);
-      const formattedDate = randomDate.toISOString().split("T")[0];
-
-      const event = createEvent(
-        time,
-        title,
-        restaurant.address,
-        restaurant.link,
-        restaurant.cost
-      );
-
-      if (!tripData.itinerary[index]) {
-        tripData.itinerary.push({
-          day: index + 1,
-          date: formattedDate,
-          events: [event],
-        });
-      } else {
-        tripData.itinerary[index].events.push(event);
-      }
-    }
-  });
-
-  // Tourist Spots에 대한 itinerary 추가
-  updatedData.touristSpots.forEach((spot, index) => {
-    if (spot && spot.address) {
-      // address가 존재할 때만 추가
-      const { time, title } = getRandomTimeAndTitle();
-      const randomDate = getRandomDate(startDate, endDate);
-      const formattedDate = randomDate.toISOString().split("T")[0];
-
-      const event = createEvent(
-        time,
-        title,
-        spot.address,
-        spot.link,
-        spot.cost
-      );
-
-      if (!tripData.itinerary[index]) {
-        tripData.itinerary.push({
-          day: index + 1,
-          date: formattedDate,
-          events: [event],
-        });
-      } else {
-        tripData.itinerary[index].events.push(event);
-      }
-    }
-  });
-
-  console.log(tripData); // 최종 결과 확인
-}
-
-// ✅ 저장하기 버튼 추가
-const saveButton = document.createElement("button");
-saveButton.textContent = "저장하기";
-saveButton.style.zIndex = "100"; // 다른 요소보다 위에 표시
-saveButton.classList.add(
-  "mt-4",
-  "p-2",
-  "bg-blue-500",
-  "text-white",
-  "rounded",
-  "fixed",
-  "bottom-4",
-  "left-4"
-);
-saveButton.onclick = saveSelectedData;
-
-document.body.appendChild(saveButton);
-
 // initMap 함수 구현: 구글 맵을 초기화하고, 마커를 지도에 추가하는 기능을 담당
 function initMap(location) {
   // 지도 초기화: 지도 중심을 전달된 위치로 설정
@@ -359,6 +159,7 @@ function initMap(location) {
     infoWindow.open(map, marker);
   });
 }
+
 async function fetchGeolocationFromDetails(address) {
   try {
     const response = await fetch(
@@ -387,6 +188,7 @@ async function fetchGeolocationFromDetails(address) {
     return null;
   }
 }
+
 async function handleMarkerClick(name, address, country) {
   console.log(" 클릭된 장소 정보:", { name, address, country });
 
@@ -402,5 +204,76 @@ async function handleMarkerClick(name, address, country) {
   } catch (error) {
     console.error("❌ 위치를 찾을 수 없습니다:", error);
     alert("위치를 찾을 수 없습니다. 장소 이름을 다시 확인해 주세요.");
+  }
+}
+
+function generateTripData(parsedData) {
+  const tripData = {
+    title: "test", // 제목은 필요에 따라 변경 가능
+    location: {
+      arrival_time: "2025-04-15T10:00:00", // 도착 시간은 고정
+      address: "서울, 대한민국", // 주소는 필요에 따라 변경 가능
+      city: "Seoul", // 도시는 필요에 따라 변경 가능
+    },
+    itinerary: [],
+  };
+
+  const categories = ["hotels", "restaurants", "touristSpots"];
+  const categoryNames = {
+    hotels: "숙소",
+    restaurants: "식사",
+    touristSpots: "관광",
+  };
+  const times = ["10:00", "12:00", "18:00"];
+
+  for (let i = 1; i <= 5; i++) {
+    // 5일치 일정 생성
+    const dayData = {
+      day: i,
+      date: "2025-02-17", // 날짜는 고정
+      events: [],
+    };
+
+    categories.forEach((category) => {
+      if (
+        parsedData &&
+        parsedData[category] &&
+        Array.isArray(parsedData[category])
+      ) {
+        parsedData[category].forEach((item) => {
+          const randomTime = times[Math.floor(Math.random() * times.length)];
+          const eventData = {
+            time: randomTime,
+            title: categoryNames[category],
+            location: item.address,
+            details: {
+              open_time: item.hours || null,
+              cost: item.cost || null,
+              link: item.link || null,
+            },
+          };
+          dayData.events.push(eventData);
+        });
+      }
+    });
+
+    tripData.itinerary.push(dayData);
+  }
+  console.log(tripData); // tripData 콘솔에 출력
+  return tripData;
+}
+
+function createAndSaveTripData() {
+  const touristDataString = localStorage.getItem("touristData");
+  if (touristDataString) {
+    const touristData = JSON.parse(touristDataString); // touristData로 변경
+    const tripData = generateTripData(touristData); // generateTripData에 touristData 전달
+
+    localStorage.setItem("tripData", JSON.stringify(tripData));
+    console.log(tripData);
+    return tripData; // 생성된 tripData 반환 (필요한 경우)
+  } else {
+    console.error("로컬 스토리지에 'touristData'가 없습니다.");
+    return null; // touristData가 없을 경우 null 반환 (필요한 경우)
   }
 }
