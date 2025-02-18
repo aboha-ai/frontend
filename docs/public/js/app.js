@@ -6,6 +6,7 @@ let currentEventEditing = null;
 // ※ API 키들은 이제 클라이언트에서는 직접 사용하지 않습니다.
 //    GOOGLE_MAP_API는 HTML에서 전역 변수로 주입되어 있다고 가정합니다.
 GOOGLE_MAP_API = "AIzaSyCw3yxyhLMb5QkP19vsufRq9Q2Bco2ATks";
+const BASE_URL = "https://yellow-atom-tea.glitch.me";
 // "HH:MM" 형식을 분 단위로 변환하는 유틸리티 함수
 function getTimeInMinutes(timeStr) {
   const parts = timeStr.split(":");
@@ -40,7 +41,7 @@ function createEmptyMessage(dayNumber) {
       <button class="bg-custom text-white px-6 py-2 rounded-button" onclick="openEventModal('add')">
         <i class="fas fa-plus mr-2"></i>Add Event
       </button>
-      <button class="bg-blue-500 text-white px-6 py-2 rounded-button" onclick="window.location.href='https://www.google.com'">
+      <button class="bg-blue-500 text-white px-6 py-2 rounded-button" onclick="window.location.href='${BASE_URL}/ai-list'">
         <i class="fas fa-lightbulb mr-2"></i>Get Suggestions
       </button>
     </div>
@@ -238,7 +239,7 @@ function createEventElement(dayNumber, eventData) {
               <button class="detail-btn text-custom hover:bg-custom/10 px-3 py-1.5 rounded-button" onclick="toggleDetails('${eventId}-details')">
                 <i class="far fa-file-alt mr-2"></i>Details
               </button>
-              <button class="reservation-btn bg-blue-500 text-white hover:bg-blue-600 px-3 py-1.5 rounded-button" onclick="window.location.href='https://www.google.com'">
+              <button class="reservation-btn bg-blue-500 text-white hover:bg-blue-600 px-3 py-1.5 rounded-button" onclick="window.location.href='${BASE_URL}/stays'">
                 Reservation Assistant
               </button>
             </div>
@@ -554,7 +555,10 @@ function updateBackgroundImage(travelLocation) {
   if (cachedImage) {
     setHeaderBackground(cachedImage);
   } else {
-    const imageUrl = `/api/image?query=${encodeURIComponent(travelLocation)}`;
+    const imageUrl = `${BASE_URL}/api/image?query=${encodeURIComponent(
+      travelLocation
+    )}`;
+
     fetch(imageUrl)
       .then((response) => response.json())
       .then((data) => {
@@ -581,7 +585,7 @@ function setHeaderBackground(imageUrl) {
 // 구글 번역 – 이제 서버 프록시 (/api/google)를 통해 요청
 async function translateToEnglish(text) {
   try {
-    const response = await fetch("/api/google", {
+    const response = await fetch(`${BASE_URL}/api/google`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text }),
@@ -609,9 +613,10 @@ async function updateWeatherForecast(data) {
       console.error("Translation error:", error);
     }
   }
-  const weatherApiUrl = `/api/weather?location=${encodeURIComponent(
+  const weatherApiUrl = `${BASE_URL}/api/weather?location=${encodeURIComponent(
     tripLocation
   )}`;
+
   console.log("Weather API URL:", weatherApiUrl);
   fetch(weatherApiUrl)
     .then((response) => response.json())

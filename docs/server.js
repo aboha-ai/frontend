@@ -6,6 +6,7 @@ const app = express();
 
 // 포트는 Glitch 환경변수 PORT 또는 3000 사용
 const PORT = process.env.PORT || 3000;
+const BASE_URL = process.env.BASE_URL || "http://localhost:3000"; // 기본값 설정
 
 // JSON 바디 파서 설정
 app.use(express.json());
@@ -13,21 +14,21 @@ app.use(express.json());
 // 정적 파일 서빙 (public 폴더)
 app.use(express.static(path.join(__dirname, "public")));
 
-// 메인 페이지 라우트 – 기본 경로 '/'에서 public/page/itinerary.html 파일을 서빙
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "page", "itinerary.html"));
+// ✅ `{BASE_URL}/ai-list/detail`로 페이지 연결
+app.get("/ai-list/detail", (req, res) => {
+  res.sendFile(path.join(__dirname, "doc", "page", "itinerary.html")); // 기존 페이지 유지
 });
 
 /* =============================
    API 엔드포인트
 ============================= */
 
-// 1. Google API 프록시 엔드포인트 (번역)
-app.post("/api/google", async (req, res) => {
+// 1. Google 번역 API 프록시 엔드포인트 (GoogleTranslateAPI)
+app.post("/api/google-translate", async (req, res) => {
   try {
     const { text } = req.body;
     if (!text) return res.status(400).json({ error: "No text provided" });
-    const url = `https://translation.googleapis.com/language/translate/v2?key=${process.env.googleAPI}`;
+    const url = `https://translation.googleapis.com/language/translate/v2?key=${process.env.GoogleTranslateAPI}`;
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -40,8 +41,8 @@ app.post("/api/google", async (req, res) => {
     const result = await response.json();
     res.json(result.data.translations[0]); // 번역 결과 반환
   } catch (error) {
-    console.error("Google API error:", error);
-    res.status(500).json({ error: "Google API call failed" });
+    console.error("Google Translate API error:", error);
+    res.status(500).json({ error: "Google Translate API call failed" });
   }
 });
 
