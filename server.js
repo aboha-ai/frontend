@@ -20,13 +20,13 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/ai-tips", (req, res) => {
-  res.sendFile(path.join(__dirname, "docs", "pages", "index.html"));
+  res.sendFile(path.join(__dirname, "docs", "pages", "tips.html"));
 });
 
 // ✅ 페이지 요청 시 해당 HTML 파일 제공
 //예시.새로운 여행 일정 만들기 버튼 누르면 그 링크로 이동.
 app.get("/ai-list", (req, res) => {
-  res.sendFile(path.join(__dirname, "docs", "pages", "index.html"));
+  res.sendFile(path.join(__dirname, "docs", "pages", "ai-list.html"));
 });
 
 app.get("/my-list/vlog", (req, res) => {
