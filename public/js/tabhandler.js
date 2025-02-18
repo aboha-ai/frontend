@@ -93,12 +93,14 @@ async function refreshData(tabData) {
   }
 }
 
-// 저장하기 버튼 클릭 이벤트 리스너
 document.getElementById("save-button").addEventListener("click", function () {
   localStorage.setItem("parsedData", JSON.stringify(parsedData));
 
   createAndSaveTripData();
   saveSelectedData();
+
+  // BASE_URL을 포함한 경로로 이동
+  window.location.href = `${BASE_URL}/ai-list/detail`;
 });
 
 // saveSelectedData 함수는 이미 api.js에 정의되어 있으므로 그대로 사용합니다.
