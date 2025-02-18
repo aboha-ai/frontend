@@ -41,7 +41,10 @@
         </div>
         <p class="schedule-text">현재 여행 일정이 없습니다.</p>
         <div class="schedule-buttons">
-          <button class="btn btn-primary" onclick="location.href='/ai-list'">
+          <button
+            class="btn btn-primary"
+            onclick="window.location.href='${BASE_URL}/ai-list'"
+          >
             + 새로운 여행 일정 만들기
           </button>
           <button class="btn btn-secondary" id="openScheduleModal">
@@ -99,11 +102,17 @@
 
       <!-- 🔹 하단 버튼 -->
       <div class="footer-buttons">
-        <button class="btn btn-dark" onclick="location.href='/my-list/vlog'">
+        <button
+          class="btn btn-dark"
+          onclick="window.location.href='${BASE_URL}/my-list'"
+        >
           <img src="/assets/write-icon.svg" alt="작성 아이콘" />
           새 여행 기록 작성
         </button>
-        <button class="btn btn-outline" onclick="location.href='/my-list'">
+        <button
+          class="btn btn-outline"
+          onclick="window.location.href='${BASE_URL}/my-list/vlog'"
+        >
           <img src="/assets/folder-icon.svg" alt="폴더 아이콘" />
           나의 여행 기록 보기
         </button>
