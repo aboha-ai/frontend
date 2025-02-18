@@ -1,4 +1,3 @@
-const BASE_URL = "https://yellow-atom-tea.glitch.me";
 // 선택된 테마를 카테고리별로 저장할 객체
 let selectedThemes = {
   accommodation: [], // 숙소
