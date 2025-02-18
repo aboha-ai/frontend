@@ -6,6 +6,7 @@ const path = require("path");
 const app = express();
 
 const PORT = process.env.PORT || 3000;
+const BASE_URL = process.env.BASE_URL;
 const corsOptions = {
   origin: "*", // 특정 도메인으로 변경 가능
   methods: "GET,POST,PUT,DELETE",
@@ -25,17 +26,17 @@ app.get("/ai-tips", (req, res) => {
 
 // ✅ 페이지 요청 시 해당 HTML 파일 제공
 //예시.새로운 여행 일정 만들기 버튼 누르면 그 링크로 이동.
-app.get("/ai-list", (req, res) => {
-  res.sendFile(path.join(__dirname, "docs", "pages", "ai-list.html"));
-});
+// app.get("/ai-list", (req, res) => {
+//   res.sendFile(path.join(__dirname, "docs", "pages", "ai-list.html"));
+// });
 
-app.get("/my-list/vlog", (req, res) => {
-  res.sendFile(path.join(__dirname, "docs", "pages", "index.html"));
-});
+// app.get("/my-list/vlog", (req, res) => {
+//   res.sendFile(path.join(__dirname, "docs", "pages", "index.html"));
+// });
 
-app.get("/my-list", (req, res) => {
-  res.sendFile(path.join(__dirname, "docs", "pages", "index.html"));
-});
+// app.get("/my-list", (req, res) => {
+//   res.sendFile(path.join(__dirname, "docs", "pages", "index.html"));
+// });
 
 // ✅ 환경 변수에서 API Key 및 모델 리스트 가져오기
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
