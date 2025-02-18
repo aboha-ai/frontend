@@ -1,0 +1,234 @@
+<!-- Popup Overlay -->
+<div id="popup-overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40  pointer-events-none"></div>
+        
+<!-- Popup Modal -->
+<div id="popup-modal" class="fixed inset-0 flex items-center justify-center hidden z-50  pointer-events-auto">
+    <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-lg">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-bold text-gray-900">여행 기록 작성</h3>
+            <button id="close-popup" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="space-y-4">
+            <!-- AI Assistance Button -->
+            <button id="ai-assistant" class="w-full bg-custom text-white px-6 py-4 rounded-lg flex items-center justify-between hover:bg-custom-dark transition-colors">
+                <div>
+                    <h4 class="text-lg font-bold">AI 도움으로 작성하기</h4>
+                    <p class="text-sm text-white/80 text-left">AI가 여행 기록 작성을 도와드립니다</p>
+                </div>
+                <i class="fas fa-robot text-2xl"></i>
+            </button>
+            
+            <!-- Manual Writing Button -->
+            <button id="manual-button" class="w-full bg-gray-100 text-gray-900 px-6 py-4 rounded-lg flex items-center justify-between hover:bg-gray-200 transition-colors">
+                <div>
+                    <h4 class="text-lg font-bold">직접 작성하기</h4>
+                    <p class="text-sm text-gray-600 text-left">나만의 방식으로 자유롭게 작성하기</p>
+                </div>
+                <i class="fas fa-pencil-alt text-2xl"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<div id="write-form" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50  pointer-events-auto">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-96 relative"> <!-- relative 추가 -->
+        <!-- 닫기 버튼을 헤더 오른쪽 상단에 배치 -->
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold">여행 기록 작성</h2>
+        </div>
+        <!-- 폼 내용 -->
+        <label class="block text-sm font-medium text-gray-700 mb-2">제목</label>
+        <input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-custom focus:border-custom" placeholder="여행 제목을 입력하세요" />
+
+        <div class="mt-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">여행 날짜</label>
+            <div class="flex justify-between space-x-4">
+                <!-- 입국 날짜 -->
+                <input type="date" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-custom focus:border-custom"/>
+                <!-- 출국 날짜 -->
+                <input type="date" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-custom focus:border-custom"/>
+            </div>
+        </div>
+        
+
+        <div class="mt-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">여행지</label>
+            <input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-custom focus:border-custom" placeholder="여행한 도시, 국가를 입력하세요" />
+        </div>
+
+        <div class="mt-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">내용</label>
+            <textarea class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-custom focus:border-custom h-40" placeholder="여행 이야기를 자유롭게 작성해주세요"></textarea>
+        </div>
+
+        <div class="mt-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">음악 추가</label>
+            <p class="text-xs text-gray-500 mt-2">직접 선택 시 지원 형식: MP3, WAV (최대 20MB)</p>
+            <div class="flex space-x-4 mb-4  pt-4">
+                <button type="button" class="flex-1 w-[184px] h-[48px] rounded-lg flex flex-row justify-center items-center p-[12px_16px] bg-black text-white">
+                    AI 음악 추천 받기
+                </button>
+                <button type="button" class="flex-1 w-[184px] h-[48px] rounded-lg flex flex-row justify-center items-center p-[12px_16px] bg-[#F3F4F6]">
+                    직접 선택하기
+                </button>
+            </div>
+        </div>
+        
+                
+    
+            <div class="flex justify-end space-x-4 mt-4">
+                <button type="button" id="close-user-popup" class="px-4 py-3 bg-gray-300 rounded-lg">취소</button>
+                <button type="submit" id = "user-record-submit" class="bg-custom text-white px-4 py-3 rounded-lg hover:bg-custom-dark transition-colors">작성 완료</button>
+            </div>
+        </div>
+</div>                                        
+
+<div id="ai-image-popup" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden pointer-events-none"></div>
+
+<div id="ai-image-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+<div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+    <div class="flex justify-between items-center mb-6">
+        <h3 class="text-2xl font-bold text-gray-900">사진 업로드</h3>
+        <button id="close-ai-popup" class="text-gray-500 hover:text-gray-700">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <div class="space-y-4">
+        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+            <p class="text-gray-600 mb-2">여행 사진을 드래그하거나 클릭하여 업로드하세요</p>
+            <input type="file" accept="image/*" class="hidden" id="image-upload" multiple />
+            <button id="choose-image-btn" class="bg-custom text-white px-4 py-2 rounded-lg hover:bg-custom-dark transition-colors">
+                사진 선택하기
+            </button>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">지원 형식: JPG, PNG (최대 10MB)</p>
+        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 h-48 overflow-y-auto" id="file-list">
+            <div class="flex items-center justify-between mb-2" id="file-upload-area">
+                <span class="text-sm font-medium text-gray-700" id="file-info-text">파일 정보</span>
+            </div>
+            <div class="space-y-2"></div> 
+        </div>
+        <button id="next-btn" class="w-full bg-custom text-white px-6 py-3 rounded-lg hover:bg-custom-dark transition-colors mt-6" disabled>
+            <i class="fas fa-arrow-right mr-2"></i>다음으로
+        </button>
+    </div>
+</div>
+</div>
+
+<!-- HTML 구조 (일정 불러오기와 직접 설정하기 버튼이 포함된 팝업) -->
+<div id="schedule-popup" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+        
+        <div class="relative inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+            <div class="sm:flex sm:items-start">
+                <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                    <!-- 제목과 닫기 버튼을 같은 flex 컨테이너에 배치하여 동일한 Y축 정렬 -->
+                    <div class="flex items-center justify-between mb-6 py-2">
+                        <h3 class="text-2xl font-bold text-gray-900">일정 설정 방식 선택</h3>
+                        <!-- 닫기 버튼 -->
+                        <button class="text-gray-500 hover:text-gray-700" id="schedule-popup-btn">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="space-y-4">
+                        <button id="schedule-list-btn" class="w-full bg-custom text-white px-6 py-4 rounded-lg flex items-center justify-between hover:bg-custom-dark transition-colors">
+                            <div>
+                                <h4 class="text-lg font-bold">저장된 일정 불러오기</h4>
+                                <p class="text-sm text-white/80 text-left">이전에 저장한 일정 목록에서 선택</p>
+                            </div>
+                            <i class="fas fa-list-ul text-2xl"></i>
+                        </button>
+                        
+                        <!-- 일정 목록을 표시할 새로운 영역 -->
+                        <div id="schedule-list-container" class="mt-4 hidden">
+                            <div class="flex justify-between items-center mb-4">
+                                
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4 border-transparent h-64 overflow-y-auto relative" id="saved-schedule-list">
+                                <!-- 일정 목록이 여기에 동적으로 추가됨 -->
+                            </div>
+                        </div>
+                        <button id="create-schedule-btn" class="w-full bg-gray-100 text-gray-900 px-6 py-4 rounded-lg flex items-center justify-between hover:bg-gray-200 transition-colors">
+                            <div>
+                                <h4 class="text-lg font-bold">직접 일정 설정하기</h4>
+                                <p class="text-sm text-gray-600 text-left">새로운 일정을 직접 입력</p>
+                            </div>
+                            <i class="fas fa-calendar-plus text-2xl"></i>
+                        </button>
+                        <div id="manual-schedule-container" class="mt-4 hidden">
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label for="start-date" class="block text-sm font-medium text-gray-700">시작 날짜</label>
+                                        <input type="date" id="start-date" class="mt-1 block w-full p-2 border border-gray-300 rounded-lg">
+                                    </div>
+                                    <div>
+                                        <label for="end-date" class="block text-sm font-medium text-gray-700">종료 날짜</label>
+                                        <input type="date" id="end-date" class="mt-1 block w-full p-2 border border-gray-300 rounded-lg">
+                                    </div>
+                                    <button id="save-manual-schedule" class="w-full bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors">                                        
+                                        일정 저장
+                                    </button>
+                                </div>
+                            </div>
+                    </div>
+
+                    <div id="schedule-list-popup" class="fixed inset-0 z-50 hidden">
+                        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
+                            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+                            <div class="relative inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6" style="max-height: 70vh; overflow-y: auto;">
+                                <div class="flex justify-between items-center mb-6">
+                                    <h3 class="text-2xl font-bold text-gray-900">저장된 일정 목록</h3>
+                                </div>
+                                <div id="saved-schedule-container" class="overflow-x-auto whitespace-nowrap p-4">
+                                    <div id="saved-schedule-list" class="flex space-x-4">
+                                        <!-- 일정이 여기에 동적으로 추가됨 -->
+                                    </div>
+                                </div>                                
+                                
+                                <div id="schedule-detail" class="mt-6 border-t pt-6">
+                                    <h4 class="text-xl font-bold text-gray-900 mb-4">선택된 일정</h4>
+                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                        <h5 class="text-lg font-semibold text-gray-900" id="selected-schedule-title"></h5>
+                                        <p class="text-sm text-gray-500" id="selected-schedule-date"></p>
+                                        <div class="mt-4">
+                                            <ul class="space-y-2 text-gray-600 text-sm" id="selected-schedule-details">
+                                                <!-- 일정 세부 내용 -->
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 날짜 선택 바 (직접 일정 설정하기 클릭 시 보이도록 설정) -->
+                    <input type="date" id="schedule-date" class="w-full p-4 mt-6 rounded-lg hidden" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="rating-popup" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+        <div class="relative inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-900">방문 장소 평가</h3>
+                <button id="close-rating-popup" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-6" id="rating-list">
+                <!-- 방문 장소와 별점이 여기에 동적으로 추가됨 -->
+            </div>
+            <button id="submit-ratings" class="w-full bg-custom text-white px-6 py-3 rounded-lg hover:bg-custom-dark transition-colors mt-6">제출하기</button>
+        </div>
+    </div>
+</div>
