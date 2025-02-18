@@ -1,3 +1,4 @@
+const BASE_URL = "https://yellow-atom-tea.glitch.me";
 // 선택된 테마를 카테고리별로 저장할 객체
 let selectedThemes = {
   accommodation: [], // 숙소
@@ -42,7 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const viewVlogsButton = document.getElementById("viewVlogsButton");
   if (viewVlogsButton) {
     viewVlogsButton.addEventListener("click", () => {
-      console.log("나의 여행 기록 보기 버튼 클릭 (임시)");
+      window.location.href = "${BASE_URL}/my-list";
     });
   }
 
@@ -50,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const tipsButton = document.getElementById("tipsButton");
   if (tipsButton) {
     tipsButton.addEventListener("click", () => {
-      window.location.href = "/travel-tips.html"; // 바로 페이지 이동
+      window.location.href = "${BASE_URL}/ai-tips"; // 바로 페이지 이동
     });
   }
 
@@ -58,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const itineraryButton = document.getElementById("itineraryButton");
   if (itineraryButton) {
     itineraryButton.addEventListener("click", () => {
-      sendDataAndRedirect("/itinerary.html");
+      sendDataAndRedirect("${BASE_URL}/ai-list");
     });
   }
 
