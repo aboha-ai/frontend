@@ -363,7 +363,7 @@ app.get("/api/geocode", async (req, res) => {
 });
 
 app.get("/ai-list", async (req, res) => {
-  const aiListPath = path.join(__dirname, "docs/page/ai-list.html");
+  const aiListPath = path.join(__dirname, 'docs/page/ai-list.html');
   try {
     const aiListContent = await fs.promises.readFile(aiListPath, "utf-8");
     res.send(aiListContent);
