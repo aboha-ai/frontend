@@ -1,4 +1,4 @@
-require('dotenv').config();
+require("dotenv").config();
 const port = process.env.PORT || 3000; // PORT 환경 변수가 있으면 사용, 없으면 3000
 const baseUrl = process.env.BASE_URL;
 const fetch = require("node-fetch");
@@ -7,9 +7,9 @@ const cheerio = require("cheerio"); // npm install axios cheerio
 const { chromium } = require("@playwright/test"); //npm install @playwright/test
 const cors = require("cors");
 
-const express = require('express');
-const fs = require('fs');
-const path = require('path');
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
 const app = express();
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
@@ -18,22 +18,24 @@ if (!gemini) {
   console.error("Gemini API 키가 설정되지 않았습니다.");
   process.exit(1); // 또는 다른 오류 처리 방식
 }
-  
-  
+
 app.use(express.json());
 
-  
+app.use(cors()); // 미들웨어
+// 모두에게 오픈.
 
-app.post("/generate-text", async (req, res) => { // 새로운 API 엔드포인트
+app.post("/generate-text", async (req, res) => {
+  // 새로운 API 엔드포인트
   async function run(prompt) {
     // The Gemini 1.5 models are versatile and work with both text-only and multimodal prompts
-    const model = gemini.getGenerativeModel({ model: "gemini-2.0-flash-lite-preview-02-05"});
-  
+    const model = gemini.getGenerativeModel({
+      model: "gemini-2.0-flash-lite-preview-02-05",
+    });
+
     const result = await model.generateContent(prompt);
     const response = result.response;
     const text = response.text();
     return text; // text 반환
-
   }
   try {
     const text = await run(`
@@ -44,37 +46,35 @@ app.post("/generate-text", async (req, res) => { // 새로운 API 엔드포인�
       작성한 글에는 제목, 날짜, 장소를 포함해서 작성하지만 절대 없는 내용을 넣지마. 결과는 반드시 한글로 작성해줘.
       
       `); // 요청 본문에서 프롬프트 가져오기
-      console.log(req.body);
-      console.log(text);  
+    console.log(req.body);
+    console.log(text);
 
     res.json({ text });
-} catch (error) {
+  } catch (error) {
     console.error("텍스트 생성 오류:", error);
     res.status(500).json({ error: "텍스트 생성 실패" });
-}
-
-
+  }
 });
-              
+
 // 정적 파일 서빙 (css, js, 이미지 등)
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
 
 // 메인 페이지 라우터
-app.get('/my-list', async (req, res) => {
-  const navberPath = path.join(__dirname, 'docs/page/navber.html');
-  const footerPath = path.join(__dirname, 'docs/page/footer.html');
-  const mainContentPath = path.join(__dirname, 'docs/page/my-list.html');
-  const modalContentPath = path.join(__dirname, 'docs/page/modal.html');
+app.get("/my-list", async (req, res) => {
+  const navberPath = path.join(__dirname, "docs/page/navber.html");
+  const footerPath = path.join(__dirname, "docs/page/footer.html");
+  const mainContentPath = path.join(__dirname, "docs/page/my-list.html");
+  const modalContentPath = path.join(__dirname, "docs/page/modal.html");
 
   try {
-      const [navber, footer, content, modalContent] = await Promise.all([
-          fs.promises.readFile(navberPath, 'utf-8'),
-          fs.promises.readFile(footerPath, 'utf-8'),
-          fs.promises.readFile(mainContentPath, 'utf-8'),
-          fs.promises.readFile(modalContentPath, 'utf-8')
-      ]);
+    const [navber, footer, content, modalContent] = await Promise.all([
+      fs.promises.readFile(navberPath, "utf-8"),
+      fs.promises.readFile(footerPath, "utf-8"),
+      fs.promises.readFile(mainContentPath, "utf-8"),
+      fs.promises.readFile(modalContentPath, "utf-8"),
+    ]);
 
-      const fullPage = `
+    const fullPage = `
           <!DOCTYPE html>
           <html lang="ko">
           <head>
@@ -106,31 +106,29 @@ app.get('/my-list', async (req, res) => {
           </html>
       `;
 
-      res.send(fullPage);
+    res.send(fullPage);
   } catch (err) {
-      console.error("파일 읽기 오류:", err);
-      res.status(500).send("파일을 읽는 중 오류가 발생했습니다.");
+    console.error("파일 읽기 오류:", err);
+    res.status(500).send("파일을 읽는 중 오류가 발생했습니다.");
   }
-}); 
-
-
-app.get("/home", async (req, res) => {
-    try {
-        const homePath = path.join(__dirname, "docs/page/home.html");
-
-        // home.html 파일을 비동기적으로 읽기
-        let homeContent = await fs.promises.readFile(homePath, "utf-8");
-
-        // 환경 변수 값 삽입 (BASE_URL)
-        homeContent = homeContent.replace("{{BASE_URL}}", process.env.BASE_URL);
-
-        res.send(homeContent);
-    } catch (err) {
-        console.error("파일 읽기 오류:", err);
-        res.status(500).send("파일을 읽는 중 오류가 발생했습니다.");
-    }
 });
 
+app.get("/home", async (req, res) => {
+  try {
+    const homePath = path.join(__dirname, "docs/page/home.html");
+
+    // home.html 파일을 비동기적으로 읽기
+    let homeContent = await fs.promises.readFile(homePath, "utf-8");
+
+    // 환경 변수 값 삽입 (BASE_URL)
+    homeContent = homeContent.replace("{{BASE_URL}}", process.env.BASE_URL);
+
+    res.send(homeContent);
+  } catch (err) {
+    console.error("파일 읽기 오류:", err);
+    res.status(500).send("파일을 읽는 중 오류가 발생했습니다.");
+  }
+});
 
 // ✅ `{BASE_URL}/ai-list/detail`로 페이지 연결
 app.get("/ai-list/detail", (req, res) => {
@@ -211,18 +209,12 @@ app.get("/api/image", async (req, res) => {
 });
 
 /* =============================
-   404 처리
-============================= */
-app.use((req, res) => {
-  res.status(404).send("Page Not Found");
-});
-
-/* =============================
    서버 시작
 ============================= */
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`)});
-const API = process.env.GEMINI_API_KEY
+  console.log(`Server is running on port ${port}`);
+});
+const API = process.env.GEMINI_API_KEY;
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API}`;
 const GEO_API_KEY = process.env.GEO_API_KEY;
@@ -372,12 +364,6 @@ app.get("/ai-list", async (req, res) => {
     res.status(500).send("파일을 읽는 중 오류가 발생했습니다. " + err.message);
   }
 });
-
-
-
-app.use(cors()); // 미들웨어
-// 모두에게 오픈.
-
 
 // gemini 비행기티켓
 
@@ -660,4 +646,11 @@ app.get("/stays", async (req, res) => {
     console.error("❌ 숙소 검색 중 오류 발생:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
+});
+
+/* =============================
+   404 처리
+============================= */
+app.use((req, res) => {
+  res.status(404).send("Page Not Found");
 });
